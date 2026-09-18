@@ -9,9 +9,17 @@ you come out, then draws the route and tells you what it saves: *613 m on foot i
 3.5 km*. Hover any portal to see where it goes. Lines are coloured by biome, so a line from
 Meadows into the Mountains blends green to ice blue.
 
-Built against **Valheim 1.0.12**. Requires BepInEx 5 and
-[Jotunn](https://thunderstore.io/c/valheim/p/ValheimModding/Jotunn/). Nothing to install on the
-server.
+Built against **Valheim 1.0.12**. Nothing to install on the server.
+
+## Install
+
+[![Thunderstore](https://img.shields.io/badge/Thunderstore-Jumpingmushroom--PortalLines-1f9bd1)](https://thunderstore.io/c/valheim/p/Jumpingmushroom/PortalLines/)
+
+Install through a mod manager (r2modman, Gale, Thunderstore Mod Manager) from the
+[Thunderstore page](https://thunderstore.io/c/valheim/p/Jumpingmushroom/PortalLines/), or manually
+by dropping `PortalLines.dll` into `BepInEx/plugins/`.
+
+Requires BepInEx 5 and [Jotunn](https://thunderstore.io/c/valheim/p/ValheimModding/Jotunn/).
 
 ## Screenshots
 
