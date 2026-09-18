@@ -17,8 +17,8 @@ namespace PortalLines.UI
     {
         private static readonly Dictionary<Minimap.PinData, PortalEntry> s_owned = new Dictionary<Minimap.PinData, PortalEntry>();
 
-        private readonly Dictionary<ZDOID, Minimap.PinData> _pins = new Dictionary<ZDOID, Minimap.PinData>();
-        private readonly List<ZDOID> _gone = new List<ZDOID>();
+        private readonly Dictionary<string, Minimap.PinData> _pins = new Dictionary<string, Minimap.PinData>();
+        private readonly List<string> _gone = new List<string>();
         private Minimap _map;
         private Sprite _icon;
         private int _version = -1;
@@ -83,15 +83,15 @@ namespace PortalLines.UI
             _version = snap.Version;
             bool showTags = PluginConfig.ShowTags.Value;
 
-            var seen = new HashSet<ZDOID>();
+            var seen = new HashSet<string>();
             for (int i = 0; i < snap.Portals.Count; i++)
             {
                 PortalEntry e = snap.Portals[i];
-                seen.Add(e.Id);
+                seen.Add(e.Key);
                 string name = showTags ? e.Tag : "";
 
                 Minimap.PinData pin;
-                if (_pins.TryGetValue(e.Id, out pin))
+                if (_pins.TryGetValue(e.Key, out pin))
                 {
                     if (pin.m_name != name)
                     {
@@ -110,13 +110,13 @@ namespace PortalLines.UI
                 if (pin == null)
                 {
                     pin = CreatePin(map, e.Pos, name);
-                    _pins[e.Id] = pin;
+                    _pins[e.Key] = pin;
                     s_owned[pin] = e;
                 }
             }
 
             _gone.Clear();
-            foreach (KeyValuePair<ZDOID, Minimap.PinData> kv in _pins)
+            foreach (KeyValuePair<string, Minimap.PinData> kv in _pins)
                 if (!seen.Contains(kv.Key))
                     _gone.Add(kv.Key);
 
@@ -156,7 +156,7 @@ namespace PortalLines.UI
 
         private void RemoveAll(Minimap map)
         {
-            foreach (KeyValuePair<ZDOID, Minimap.PinData> kv in _pins)
+            foreach (KeyValuePair<string, Minimap.PinData> kv in _pins)
             {
                 map.RemovePin(kv.Value);
                 s_owned.Remove(kv.Value);
@@ -171,11 +171,13 @@ namespace PortalLines.UI
         /// </summary>
         public static void ApplyTints()
         {
-            if (s_owned.Count == 0 || !PluginConfig.TintUnlinked.Value)
+            if (s_owned.Count == 0)
                 return;
 
+            bool tint = PluginConfig.TintUnlinked.Value;
             Color unlinked = PluginConfig.UnlinkedColor.Value;
             Color conflict = PluginConfig.ConflictColor.Value;
+            float rememberedAlpha = PluginConfig.RememberedAlpha.Value;
 
             foreach (KeyValuePair<Minimap.PinData, PortalEntry> kv in s_owned)
             {
@@ -184,10 +186,24 @@ namespace PortalLines.UI
                 if (pin.m_iconElement == null)
                     continue;
 
-                if (e.Conflict && !e.Linked)
-                    pin.m_iconElement.color = conflict;
-                else if (!e.Linked)
-                    pin.m_iconElement.color = unlinked;
+                Color c = pin.m_iconElement.color;
+                if (tint && e.Conflict && !e.Linked)
+                    c = conflict;
+                else if (tint && !e.Linked)
+                    c = unlinked;
+
+                // Remembered from an earlier session, not confirmed to still exist: fade it.
+                if (e.Remembered)
+                {
+                    c.a *= rememberedAlpha;
+                    if (pin.m_NamePinData != null && pin.m_NamePinData.PinNameText != null)
+                    {
+                        Color t = pin.m_NamePinData.PinNameText.color;
+                        t.a = c.a;
+                        pin.m_NamePinData.PinNameText.color = t;
+                    }
+                }
+                pin.m_iconElement.color = c;
             }
         }
 

@@ -20,7 +20,7 @@ namespace PortalLines.Core
             _registered = true;
 
             new Terminal.ConsoleCommand("portallines",
-                "PortalLines diagnostics: list | links | refresh | requests",
+                "PortalLines diagnostics: list | links | refresh | requests | forget",
                 delegate (Terminal.ConsoleEventArgs args)
                 {
                     string sub = args.Length > 1 ? args[1].ToLowerInvariant() : "help";
@@ -29,6 +29,11 @@ namespace PortalLines.Core
                         case "list": List(args.Context); break;
                         case "links": Links(args.Context); break;
                         case "refresh": Refresh(args.Context); break;
+                        case "forget":
+                            PortalCache.Forget();
+                            PortalRegistry.Scan();
+                            Say(args.Context, "PortalLines: forgot every remembered portal for this world.");
+                            break;
                         case "requests":
                             Say(args.Context, "PortalLines: " + PortalRegistry.RequestsSent + " ZDO request(s) sent this world.");
                             break;
@@ -37,6 +42,7 @@ namespace PortalLines.Core
                             Say(args.Context, "portallines links    - every drawn line and whether it is confirmed");
                             Say(args.Context, "portallines refresh  - rescan now and ask the server for stale copies");
                             Say(args.Context, "portallines requests - how many ZDO requests have been sent");
+                            Say(args.Context, "portallines forget   - clear this world's remembered portals from disk");
                             break;
                     }
                 });
@@ -63,14 +69,16 @@ namespace PortalLines.Core
         {
             PortalRegistry.Scan();
             PortalSnapshot s = PortalRegistry.Snapshot;
-            Say(ctx, string.Format("PortalLines: {0} known portal(s){1}", s.Portals.Count,
-                s.Authoritative ? " (host: whole world)" : " (client: seen this session)"));
+            Say(ctx, string.Format("PortalLines: {0} known portal(s), {1} remembered{2}", s.Portals.Count, s.RememberedCount,
+                s.Authoritative ? " (host: whole world)" : " (client)"));
 
             for (int i = 0; i < s.Portals.Count; i++)
             {
                 PortalEntry e = s.Portals[i];
                 string state;
-                if (e.Linked)
+                if (e.Remembered)
+                    state = e.Linked ? "remembered, presumed" : "remembered";
+                else if (e.Linked)
                     state = e.Link.Kind == LinkKind.Confirmed ? "linked" : "presumed";
                 else if (e.PartnerId.IsNone())
                     state = e.Conflict ? "unlinked (tag conflict)" : "unlinked";

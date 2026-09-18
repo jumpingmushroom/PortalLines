@@ -15,7 +15,7 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.1.1";
+        public const string PluginVersion = "0.2.0";
 
         /// <summary>Scan cadence while the large map is closed: cheap, and keeps pins current.</summary>
         private const float IdleScanInterval = 15f;
@@ -28,6 +28,7 @@ namespace PortalLines
 
         private float _nextScan;
         private float _nextRefresh;
+        private float _nextSave;
         private bool _wasLarge;
         private Player _lastPlayer;
         private bool _hadPlayer;
@@ -54,6 +55,7 @@ namespace PortalLines
             PluginConfig.PinsChanged -= OnPinsChanged;
             _overlay.Destroy();
             _pins.Clear();
+            PortalCache.Unload();
             if (_harmony != null)
                 _harmony.UnpatchSelf();
         }
@@ -74,6 +76,7 @@ namespace PortalLines
             _overlay.Destroy();
             _pins.Clear();
             PortalRegistry.Clear();
+            PortalCache.Unload(); // saves if dirty
             Diagnostics.Reset();
             _nextScan = 0f;
             _wasLarge = false;
@@ -144,6 +147,12 @@ namespace PortalLines
             }
 
             _pins.Sync(PortalRegistry.Snapshot);
+
+            if (Time.time >= _nextSave)
+            {
+                _nextSave = Time.time + 10f;
+                PortalCache.SaveIfDirty();
+            }
         }
     }
 }

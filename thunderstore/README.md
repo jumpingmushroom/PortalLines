@@ -9,9 +9,10 @@ Draws every portal you know about on the large map, with a line to the portal it
   filter hides them.
 
 Client-side only; nothing to install on the server. The mod knows every portal you have been near
-this session and the far end of each, fetched with the same request the game makes for the portal
-you are standing next to. The hosting player and singleplayer see the whole world.
+and the far end of each, fetched with the same request the game makes for the portal you are
+standing next to, and remembers them per world between sessions (drawn faded until confirmed).
+The hosting player and singleplayer see the whole world.
 
-Console: `portallines list | links | refresh`.
+Console: `portallines list | links | refresh | forget`.
 
 Requires BepInEx and Jotunn. Source and issues: https://github.com/jumpingmushroom/PortalLines

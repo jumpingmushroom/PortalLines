@@ -73,6 +73,7 @@ namespace PortalLines.UI
             bool showPresumed = PluginConfig.ShowPresumed.Value;
             bool single = PluginConfig.ColorMode.Value == LineColorMode.Single;
             Color singleColor = PluginConfig.SingleColor.Value;
+            float rememberedAlpha = PluginConfig.RememberedAlpha.Value;
 
             // Local space: pivot (0,0) and a rect matching the pin root, so (0,0) is the map's
             // bottom-left exactly as it is for pin anchoredPositions.
@@ -94,6 +95,8 @@ namespace PortalLines.UI
 
                 Color c = single ? singleColor : MapMath.TagColor(link.Tag);
                 c.a = alpha * (dashed ? 0.85f : 1f);
+                if (link.AnyRemembered)
+                    c.a *= rememberedAlpha;
 
                 if (outline)
                     AddLine(vh, a, b, width + 2f, outlineColor, dashed);

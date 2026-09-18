@@ -18,6 +18,9 @@ namespace PortalLines
         public static ConfigEntry<float> ScanInterval;
         public static ConfigEntry<float> RefreshInterval;
         public static ConfigEntry<bool> FetchPartners;
+        public static ConfigEntry<bool> RememberPortals;
+        public static ConfigEntry<int> ForgetAfterDays;
+        public static ConfigEntry<float> RememberedAlpha;
 
         public static ConfigEntry<bool> LinesEnabled;
         public static ConfigEntry<float> LineWidth;
@@ -106,6 +109,25 @@ namespace PortalLines
                     "can ever be connected; the rest sit dark.",
                     null, Attr(30)));
 
+            RememberPortals = cfg.Bind("Data", "RememberPortals", true,
+                new ConfigDescription(
+                    "Remember portals on disk per world, so the map is populated from the moment you " +
+                    "log in. The game only tells a client about portals near it, so without this the " +
+                    "map starts empty every session. Stored in BepInEx/config/PortalLines/.",
+                    null, Attr(28)));
+
+            ForgetAfterDays = cfg.Bind("Data", "ForgetAfterDays", 0,
+                new ConfigDescription(
+                    "Drop remembered portals not seen for this many days. 0 keeps them until you " +
+                    "visit the spot and find them gone.",
+                    new AcceptableValueRange<int>(0, 365), Attr(26)));
+
+            RememberedAlpha = cfg.Bind("Data", "RememberedAlpha", 0.55f,
+                new ConfigDescription(
+                    "Opacity of pins and lines for portals known only from memory, not yet confirmed " +
+                    "this session.",
+                    new AcceptableValueRange<float>(0.1f, 1f), Attr(24)));
+
             ScanInterval = cfg.Bind("Data", "ScanInterval", 2f,
                 new ConfigDescription("Seconds between re-reading the portal list while the large map is open.",
                     new AcceptableValueRange<float>(0.5f, 10f), Attr(20, advanced: true)));
@@ -136,6 +158,8 @@ namespace PortalLines
             ShowPresumed.SettingChanged += (s, e) => Raise(StyleChanged);
             Outline.SettingChanged += (s, e) => Raise(StyleChanged);
             ShowOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
+
+            RememberedAlpha.SettingChanged += (s, e) => Raise(StyleChanged);
 
             PinsEnabled.SettingChanged += (s, e) => Raise(PinsChanged);
             ShowTags.SettingChanged += (s, e) => Raise(PinsChanged);
