@@ -6,6 +6,9 @@ namespace PortalLines
 {
     public enum LineColorMode
     {
+        /// <summary>Each end coloured by the biome it sits in, blended along the line.</summary>
+        Biome,
+
         /// <summary>A stable colour derived from the tag, so crossing lines can be told apart.</summary>
         PerTag,
 
@@ -28,6 +31,15 @@ namespace PortalLines
         public static ConfigEntry<LineColorMode> ColorMode;
         public static ConfigEntry<Color> SingleColor;
         public static ConfigEntry<bool> ShowPresumed;
+        public static ConfigEntry<Color> MeadowsColor;
+        public static ConfigEntry<Color> BlackForestColor;
+        public static ConfigEntry<Color> SwampColor;
+        public static ConfigEntry<Color> MountainColor;
+        public static ConfigEntry<Color> PlainsColor;
+        public static ConfigEntry<Color> MistlandsColor;
+        public static ConfigEntry<Color> AshlandsColor;
+        public static ConfigEntry<Color> DeepNorthColor;
+        public static ConfigEntry<Color> OceanColor;
         public static ConfigEntry<bool> Outline;
         public static ConfigEntry<bool> ShowOnMinimap;
         public static ConfigEntry<bool> MapToggle;
@@ -70,14 +82,29 @@ namespace PortalLines
             LineAlpha = cfg.Bind("Lines", "Alpha", 0.85f,
                 new ConfigDescription("Line opacity.", new AcceptableValueRange<float>(0.1f, 1f), Attr(85)));
 
-            ColorMode = cfg.Bind("Lines", "ColorMode", LineColorMode.PerTag,
+            ColorMode = cfg.Bind("Lines", "ColorMode", LineColorMode.Biome,
                 new ConfigDescription(
-                    "PerTag gives each tag its own stable colour so crossing lines can be told apart. " +
-                    "Single uses one colour for everything.",
+                    "Biome colours each end of a line by the biome it sits in and blends between " +
+                    "them, so a line tells you where it goes. PerTag gives each tag its own stable " +
+                    "colour so crossing lines can be told apart. Single uses one colour for everything.",
                     null, Attr(80)));
 
             SingleColor = cfg.Bind("Lines", "SingleColor", new Color(0.55f, 0.85f, 1f),
                 new ConfigDescription("Line colour when ColorMode is Single.", null, Attr(75)));
+
+            // Biome palette. Hues are spread around the wheel on purpose: the map paints Meadows
+            // and Black Forest both green, which blended along a line over green terrain says
+            // nothing, so Black Forest is a teal-pine here. Mountain and Deep North are both snow;
+            // they differ by saturation rather than hue.
+            MeadowsColor = BiomeEntry(cfg, "Meadows", new Color(0.62f, 1f, 0.3f), 79);
+            BlackForestColor = BiomeEntry(cfg, "BlackForest", new Color(0.1f, 0.68f, 0.55f), 78);
+            SwampColor = BiomeEntry(cfg, "Swamp", new Color(0.72f, 0.5f, 0.38f), 77);
+            MountainColor = BiomeEntry(cfg, "Mountain", new Color(0.5f, 0.78f, 1f), 76);
+            PlainsColor = BiomeEntry(cfg, "Plains", new Color(1f, 0.9f, 0.2f), 75);
+            MistlandsColor = BiomeEntry(cfg, "Mistlands", new Color(0.75f, 0.5f, 1f), 74);
+            AshlandsColor = BiomeEntry(cfg, "Ashlands", new Color(1f, 0.28f, 0.18f), 73);
+            DeepNorthColor = BiomeEntry(cfg, "DeepNorth", new Color(0.92f, 0.96f, 1f), 72);
+            OceanColor = BiomeEntry(cfg, "Ocean", new Color(0.25f, 0.5f, 1f), 71);
 
             ShowPresumed = cfg.Bind("Lines", "ShowPresumed", true,
                 new ConfigDescription(
@@ -195,6 +222,14 @@ namespace PortalLines
             TintUnlinked.SettingChanged += (s, e) => Raise(PinsChanged);
             UnlinkedColor.SettingChanged += (s, e) => Raise(PinsChanged);
             ConflictColor.SettingChanged += (s, e) => Raise(PinsChanged);
+        }
+
+        private static ConfigEntry<Color> BiomeEntry(ConfigFile cfg, string biome, Color def, int order)
+        {
+            ConfigEntry<Color> e = cfg.Bind("Biome colours", biome, def,
+                new ConfigDescription("Line colour for a portal standing in " + biome + " (ColorMode Biome).", null, Attr(order)));
+            e.SettingChanged += (s, ev) => Raise(StyleChanged);
+            return e;
         }
 
         private static void Raise(Action a)

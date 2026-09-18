@@ -152,10 +152,13 @@ namespace PortalLines.Core
                 return c != 0 ? c : a.Pos.z.CompareTo(b.Pos.z);
             });
 
+            WorldGenerator wg = WorldGenerator.instance;
             _byTag.Clear();
             for (int i = 0; i < next.Portals.Count; i++)
             {
                 PortalEntry e = next.Portals[i];
+                if (wg != null)
+                    e.Biome = wg.GetBiome(e.Pos);
                 List<PortalEntry> list;
                 if (!_byTag.TryGetValue(e.Tag, out list))
                     _byTag[e.Tag] = list = new List<PortalEntry>(2);

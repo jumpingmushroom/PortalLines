@@ -15,7 +15,7 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.3.0";
+        public const string PluginVersion = "0.4.0";
 
         /// <summary>Never toggle while the player is typing.</summary>
         private static bool InputBlocked()

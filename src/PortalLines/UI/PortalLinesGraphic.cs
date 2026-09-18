@@ -81,7 +81,7 @@ namespace PortalLines.UI
             float alpha = PluginConfig.LineAlpha.Value;
             bool outline = PluginConfig.Outline.Value;
             bool showPresumed = PluginConfig.ShowPresumed.Value;
-            bool single = PluginConfig.ColorMode.Value == LineColorMode.Single;
+            LineColorMode mode = PluginConfig.ColorMode.Value;
             Color singleColor = PluginConfig.SingleColor.Value;
             float rememberedAlpha = PluginConfig.RememberedAlpha.Value;
 
@@ -107,38 +107,66 @@ namespace PortalLines.UI
                 if (!MapMath.ClipToRect(ref a, ref b, clip))
                     continue;
 
-                Color c = single ? singleColor : MapMath.TagColor(link.Tag);
-                c.a = alpha * (dashed ? 0.85f : 1f);
+                // Two colours, one per end; equal unless in Biome mode. Vertex colours interpolate,
+                // so the gradient is free.
+                Color ca, cb;
+                switch (mode)
+                {
+                    case LineColorMode.Biome:
+                        ca = MapMath.BiomeColor(link.A.Biome);
+                        cb = MapMath.BiomeColor(link.B.Biome);
+                        break;
+                    case LineColorMode.Single:
+                        ca = cb = singleColor;
+                        break;
+                    default:
+                        ca = cb = MapMath.TagColor(link.Tag);
+                        break;
+                }
+
+                float la = alpha * (dashed ? 0.85f : 1f);
                 if (link.AnyRemembered)
-                    c.a *= rememberedAlpha;
+                    la *= rememberedAlpha;
 
                 float w = width;
                 if (focus != null)
                 {
                     if (focused)
                     {
-                        c.a = Mathf.Max(c.a, 0.95f);
+                        la = Mathf.Max(la, 0.95f);
                         w += 1.5f;
                     }
                     else
                     {
-                        c.a *= focusDim;
+                        la *= focusDim;
                     }
                 }
+                ca.a = la;
+                cb.a = la;
                 Color oc = outlineColor;
-                oc.a = 0.55f * c.a;
+                oc.a = 0.55f * la;
+
+                // The endpoints were clipped to the view; keep the gradient anchored to the real
+                // ends so panning does not slide the colours along the line.
+                Vector2 fa = MapMath.WorldToLocal(map, link.A.Pos, uv, rect);
+                Vector2 fb = MapMath.WorldToLocal(map, link.B.Pos, uv, rect);
+                float full = (fb - fa).magnitude;
+                float ta = full > 0.001f ? Vector2.Dot(a - fa, (fb - fa) / full) / full : 0f;
+                float tb = full > 0.001f ? Vector2.Dot(b - fa, (fb - fa) / full) / full : 1f;
+                Color cStart = Color.LerpUnclamped(ca, cb, ta);
+                Color cEnd = Color.LerpUnclamped(ca, cb, tb);
 
                 if (outline)
-                    AddLine(vh, a, b, w + 2f, oc, dashed);
-                AddLine(vh, a, b, w, c, dashed);
+                    AddLine(vh, a, b, w + 2f, oc, oc, dashed);
+                AddLine(vh, a, b, w, cStart, cEnd, dashed);
             }
         }
 
-        private static void AddLine(VertexHelper vh, Vector2 a, Vector2 b, float width, Color color, bool dashed)
+        private static void AddLine(VertexHelper vh, Vector2 a, Vector2 b, float width, Color colorA, Color colorB, bool dashed)
         {
             if (!dashed)
             {
-                AddQuad(vh, a, b, width, color);
+                AddQuad(vh, a, b, width, colorA, colorB);
                 return;
             }
 
@@ -154,12 +182,13 @@ namespace PortalLines.UI
             for (int i = 0; i < dashes && t < len; i++)
             {
                 float end = Mathf.Min(len, t + DashLength);
-                AddQuad(vh, a + dir * t, a + dir * end, width, color);
+                AddQuad(vh, a + dir * t, a + dir * end, width,
+                    Color.Lerp(colorA, colorB, t / len), Color.Lerp(colorA, colorB, end / len));
                 t += period;
             }
         }
 
-        private static void AddQuad(VertexHelper vh, Vector2 p0, Vector2 p1, float width, Color color)
+        private static void AddQuad(VertexHelper vh, Vector2 p0, Vector2 p1, float width, Color c0, Color c1)
         {
             Vector2 d = p1 - p0;
             float len = d.magnitude;
@@ -175,10 +204,10 @@ namespace PortalLines.UI
 
             int start = vh.currentVertCount;
             s_verts.Clear();
-            s_verts.Add(Vert(p0 - n, color));
-            s_verts.Add(Vert(p0 + n, color));
-            s_verts.Add(Vert(p1 + n, color));
-            s_verts.Add(Vert(p1 - n, color));
+            s_verts.Add(Vert(p0 - n, c0));
+            s_verts.Add(Vert(p0 + n, c0));
+            s_verts.Add(Vert(p1 + n, c1));
+            s_verts.Add(Vert(p1 - n, c1));
             for (int i = 0; i < 4; i++)
                 vh.AddVert(s_verts[i]);
             vh.AddTriangle(start, start + 1, start + 2);
