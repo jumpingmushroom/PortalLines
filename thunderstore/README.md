@@ -6,6 +6,8 @@ Draws every portal you know about on the large map, with a line to the portal it
   (per-tag and single-colour modes too). Dashed means the pair is not confirmed yet.
 - Every known portal gets a pin with its tag. Unconnected portals are tinted red; a tag shared by
   three or more portals (only one pair can ever connect) is tinted orange.
+- Shift-click anywhere to plan the fastest route there through the portal network: dotted
+  walking legs, bright hops, and the total on foot against the direct distance.
 - Hover a portal to highlight its line and see tag, destination biome, distance and link state.
   A "Portal lines" checkbox on the map hides the lines.
 - Pins are never saved and never shared through the cartography table. The map's portal icon

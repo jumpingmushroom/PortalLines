@@ -2,9 +2,7 @@ using System;
 using System.Text;
 using PortalLines.Core;
 using PortalLines.Model;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace PortalLines.UI
 {
@@ -35,10 +33,8 @@ namespace PortalLines.UI
     /// </summary>
     internal sealed class PortalHover
     {
+        private readonly MapPanel _panel = new MapPanel();
         private Minimap _map;
-        private RectTransform _panel;
-        private TMP_Text _text;
-        private string _lastText;
 
         public void Update(Minimap map, PortalSnapshot snap)
         {
@@ -49,7 +45,7 @@ namespace PortalLines.UI
             }
             if (!ReferenceEquals(map, _map))
             {
-                DestroyPanel();
+                _panel.Destroy();
                 _map = map;
             }
 
@@ -89,115 +85,26 @@ namespace PortalLines.UI
             HoverState.Set(best);
             if (best == null)
             {
-                HidePanel();
+                _panel.Hide();
                 return;
             }
 
-            ShowPanel(map, best, pointer);
+            if (!_panel.Created && !_panel.Create(map, "PortalLinesHover"))
+                return;
+            _panel.ShowAtScreen(map, Describe(best), pointer);
         }
 
         public void Clear()
         {
             HoverState.Set(null);
-            HidePanel();
+            _panel.Hide();
         }
 
         public void Destroy()
         {
             HoverState.Set(null);
-            DestroyPanel();
+            _panel.Destroy();
             _map = null;
-        }
-
-        private void ShowPanel(Minimap map, PortalEntry e, Vector3 pointer)
-        {
-            if (_panel == null && !CreatePanel(map))
-                return;
-
-            string content = Describe(e);
-            if (content != _lastText)
-            {
-                _lastText = content;
-                _text.text = content;
-                Vector2 size = _text.GetPreferredValues(content);
-                _panel.sizeDelta = new Vector2(Mathf.Ceil(size.x) + 20f, Mathf.Ceil(size.y) + 14f);
-            }
-
-            var root = map.m_largeRoot.transform as RectTransform;
-            Vector2 local;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, pointer, null, out local))
-                return;
-
-            // Anchor bottom-left of the root, pivot top-left of the panel; keep it on screen by
-            // flipping to the other side of the cursor when it would run off an edge.
-            Rect rr = root.rect;
-            float x = local.x - rr.xMin + 18f;
-            float y = local.y - rr.yMin - 18f;
-            if (x + _panel.sizeDelta.x > rr.width)
-                x = local.x - rr.xMin - 18f - _panel.sizeDelta.x;
-            if (y - _panel.sizeDelta.y < 0f)
-                y = local.y - rr.yMin + 18f + _panel.sizeDelta.y;
-            _panel.anchoredPosition = new Vector2(x, y);
-
-            if (!_panel.gameObject.activeSelf)
-                _panel.gameObject.SetActive(true);
-            _panel.SetAsLastSibling();
-        }
-
-        private void HidePanel()
-        {
-            if (_panel != null && _panel.gameObject.activeSelf)
-                _panel.gameObject.SetActive(false);
-        }
-
-        private void DestroyPanel()
-        {
-            if (_panel != null)
-                UnityEngine.Object.Destroy(_panel.gameObject);
-            _panel = null;
-            _text = null;
-            _lastText = null;
-        }
-
-        private bool CreatePanel(Minimap map)
-        {
-            if (map.m_largeRoot == null || map.m_biomeNameLarge == null)
-                return false;
-
-            var go = new GameObject("PortalLinesHover", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            go.transform.SetParent(map.m_largeRoot.transform, false);
-            _panel = go.transform as RectTransform;
-            _panel.anchorMin = Vector2.zero;
-            _panel.anchorMax = Vector2.zero;
-            _panel.pivot = new Vector2(0f, 1f);
-
-            var bg = go.GetComponent<Image>();
-            bg.color = new Color(0.05f, 0.04f, 0.03f, 0.82f);
-            bg.raycastTarget = false;
-
-            // Clone the biome label to inherit the map's font and material, then restyle it.
-            GameObject textGo = UnityEngine.Object.Instantiate(map.m_biomeNameLarge.gameObject, _panel);
-            textGo.name = "Text";
-            foreach (Component c in textGo.GetComponents<Component>())
-                if (c != null && c.GetType().Name == "Localize")
-                    UnityEngine.Object.Destroy(c);
-            _text = textGo.GetComponent<TMP_Text>();
-            var trt = textGo.transform as RectTransform;
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.pivot = new Vector2(0f, 1f);
-            trt.offsetMin = new Vector2(10f, 7f);
-            trt.offsetMax = new Vector2(-10f, -7f);
-            _text.alignment = TextAlignmentOptions.TopLeft;
-            _text.fontSize = 17f;
-            _text.textWrappingMode = TextWrappingModes.NoWrap;
-            _text.richText = true;
-            _text.color = Color.white;
-            _text.raycastTarget = false;
-            _text.text = "";
-
-            go.SetActive(false);
-            return true;
         }
 
         private static string Describe(PortalEntry e)
