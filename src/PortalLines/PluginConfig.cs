@@ -47,6 +47,10 @@ namespace PortalLines
         public static ConfigEntry<bool> HoverEnabled;
         public static ConfigEntry<float> HoverRadius;
         public static ConfigEntry<float> FocusDim;
+        public static ConfigEntry<bool> RouteEnabled;
+        public static ConfigEntry<float> HopCost;
+        public static ConfigEntry<bool> RoutePresumed;
+        public static ConfigEntry<Color> RouteColor;
 
         public static ConfigEntry<bool> PinsEnabled;
         public static ConfigEntry<bool> ShowTags;
@@ -140,6 +144,25 @@ namespace PortalLines
             FocusDim = cfg.Bind("Hover", "DimOthers", 0.12f,
                 new ConfigDescription("Opacity multiplier for every other line while a portal is hovered.",
                     new AcceptableValueRange<float>(0f, 1f), Attr(54)));
+
+            RouteEnabled = cfg.Bind("Route", "Enabled", true,
+                new ConfigDescription(
+                    "Shift-click a spot on the large map to plan the fastest way there through the " +
+                    "portal network: walk to a portal, hop, walk on. Shift-right-click clears it.",
+                    null, Attr(53)));
+
+            HopCost = cfg.Bind("Route", "HopCost", 60f,
+                new ConfigDescription(
+                    "How many metres of walking one portal hop is worth, so the planner does not " +
+                    "chain hops that save almost nothing.",
+                    new AcceptableValueRange<float>(0f, 500f), Attr(52)));
+
+            RoutePresumed = cfg.Bind("Route", "UsePresumedLinks", true,
+                new ConfigDescription("Let the planner use links that are presumed but not yet confirmed by the server.",
+                    null, Attr(51)));
+
+            RouteColor = cfg.Bind("Route", "Color", new Color(1f, 1f, 1f),
+                new ConfigDescription("Colour of the walking legs and markers.", null, Attr(50)));
 
             PinsEnabled = cfg.Bind("Pins", "Enabled", true,
                 new ConfigDescription(

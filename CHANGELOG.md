@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — route planner
+
+- Shift-click a spot on the large map to plan the fastest way there through the portal network.
+  The route is drawn as dotted walking legs and bright hop lines, with a disc where you step in
+  and out and a ring at the destination; other lines dim. A panel beside the destination gives
+  total walking distance, hops, the direct distance for comparison, and each hop's portal and
+  destination biome. Shift-right-click clears. While Shift is held the map's own click actions
+  (cross off, add, remove pin) are suppressed.
+- Config: `Route.Enabled`, `HopCost` (metres one hop is worth), `UsePresumedLinks`, `Color`.
+
 ## 0.4.0 — biome gradient
 
 - New default line colouring: each end takes the colour of the biome it sits in and the line

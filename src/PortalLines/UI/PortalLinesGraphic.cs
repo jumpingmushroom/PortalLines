@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using PortalLines.Core;
 using PortalLines.Model;
 using UnityEngine;
@@ -16,9 +15,6 @@ namespace PortalLines.UI
         private const float DashLength = 14f;
         private const float GapLength = 9f;
 
-        /// <summary>Guard against pathological zoom: a 4000 px line at 14 px dashes is 170 quads.</summary>
-        private const int MaxDashesPerLine = 512;
-
         public RawImage MapImage;
         public bool IsLarge = true;
 
@@ -28,7 +24,6 @@ namespace PortalLines.UI
         private int _lastHover = -1;
         private bool _styleDirty = true;
 
-        private static readonly List<UIVertex> s_verts = new List<UIVertex>(4);
 
         public void MarkStyleDirty()
         {
@@ -43,7 +38,7 @@ namespace PortalLines.UI
             Rect uv = MapImage.uvRect;
             Rect rect = MapImage.rectTransform.rect;
             int version = PortalRegistry.Snapshot.Version;
-            int hover = IsLarge ? HoverState.Version : 0;
+            int hover = IsLarge ? HoverState.Version + RouteState.Version * 1000 : 0;
 
             if (_styleDirty || uv != _lastUv || rect != _lastRect || version != _lastVersion || hover != _lastHover)
             {
@@ -71,7 +66,9 @@ namespace PortalLines.UI
             // With lines switched off, hovering a portal still peeks at its own line.
             bool linesOn = PluginConfig.LinesEnabled.Value;
             string focus = IsLarge && HoverState.Entry != null ? HoverState.Entry.Key : null;
-            if (!linesOn && focus == null)
+            Route route = IsLarge && RouteState.Active ? RouteState.Current : null;
+            bool routeUsesPortals = route != null && route.UsesPortals;
+            if (!linesOn && focus == null && !routeUsesPortals)
                 return;
             float focusDim = PluginConfig.FocusDim.Value;
 
@@ -99,7 +96,8 @@ namespace PortalLines.UI
                     continue;
 
                 bool focused = focus != null && (link.A.Key == focus || link.B.Key == focus);
-                if (!linesOn && !focused)
+                bool onRoute = routeUsesPortals && RouteUses(route, link);
+                if (!linesOn && !focused && !onRoute)
                     continue;
 
                 Vector2 a = MapMath.WorldToLocal(map, link.A.Pos, uv, rect);
@@ -129,12 +127,17 @@ namespace PortalLines.UI
                     la *= rememberedAlpha;
 
                 float w = width;
-                if (focus != null)
+                if (focus != null || routeUsesPortals)
                 {
                     if (focused)
                     {
                         la = Mathf.Max(la, 0.95f);
                         w += 1.5f;
+                    }
+                    else if (onRoute)
+                    {
+                        // The route graphic redraws this link brighter; keep the base copy out of the way.
+                        la *= focusDim;
                     }
                     else
                     {
@@ -156,70 +159,19 @@ namespace PortalLines.UI
                 Color cStart = Color.LerpUnclamped(ca, cb, ta);
                 Color cEnd = Color.LerpUnclamped(ca, cb, tb);
 
+                float dash = dashed ? DashLength : 0f, gap = dashed ? GapLength : 0f;
                 if (outline)
-                    AddLine(vh, a, b, w + 2f, oc, oc, dashed);
-                AddLine(vh, a, b, w, cStart, cEnd, dashed);
+                    LineMesh.AddLine(vh, a, b, w + 2f, oc, oc, dash, gap);
+                LineMesh.AddLine(vh, a, b, w, cStart, cEnd, dash, gap);
             }
         }
 
-        private static void AddLine(VertexHelper vh, Vector2 a, Vector2 b, float width, Color colorA, Color colorB, bool dashed)
+        private static bool RouteUses(Route route, PortalLink link)
         {
-            if (!dashed)
-            {
-                AddQuad(vh, a, b, width, colorA, colorB);
-                return;
-            }
-
-            Vector2 d = b - a;
-            float len = d.magnitude;
-            if (len < 0.001f)
-                return;
-
-            Vector2 dir = d / len;
-            float period = DashLength + GapLength;
-            int dashes = Mathf.Min(MaxDashesPerLine, Mathf.CeilToInt(len / period));
-            float t = 0f;
-            for (int i = 0; i < dashes && t < len; i++)
-            {
-                float end = Mathf.Min(len, t + DashLength);
-                AddQuad(vh, a + dir * t, a + dir * end, width,
-                    Color.Lerp(colorA, colorB, t / len), Color.Lerp(colorA, colorB, end / len));
-                t += period;
-            }
-        }
-
-        private static void AddQuad(VertexHelper vh, Vector2 p0, Vector2 p1, float width, Color c0, Color c1)
-        {
-            Vector2 d = p1 - p0;
-            float len = d.magnitude;
-            if (len < 0.001f)
-                return;
-
-            Vector2 n = new Vector2(-d.y, d.x) / len * (width * 0.5f);
-
-            // Extend the ends by half the width so consecutive dashes and joins do not show gaps.
-            Vector2 e = d / len * (width * 0.5f);
-            p0 -= e;
-            p1 += e;
-
-            int start = vh.currentVertCount;
-            s_verts.Clear();
-            s_verts.Add(Vert(p0 - n, c0));
-            s_verts.Add(Vert(p0 + n, c0));
-            s_verts.Add(Vert(p1 + n, c1));
-            s_verts.Add(Vert(p1 - n, c1));
-            for (int i = 0; i < 4; i++)
-                vh.AddVert(s_verts[i]);
-            vh.AddTriangle(start, start + 1, start + 2);
-            vh.AddTriangle(start + 2, start + 3, start);
-        }
-
-        private static UIVertex Vert(Vector2 p, Color c)
-        {
-            UIVertex v = UIVertex.simpleVert;
-            v.position = p;
-            v.color = c;
-            return v;
+            for (int i = 0; i < route.Legs.Count; i++)
+                if (route.Legs[i].Kind == LegKind.Hop && ReferenceEquals(route.Legs[i].Link, link))
+                    return true;
+            return false;
         }
     }
 }
