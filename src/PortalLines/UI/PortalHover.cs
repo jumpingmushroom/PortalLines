@@ -203,7 +203,13 @@ namespace PortalLines.UI
         private static string Describe(PortalEntry e)
         {
             var sb = new StringBuilder(160);
-            Color c = PluginConfig.ColorMode.Value == LineColorMode.Single ? PluginConfig.SingleColor.Value : MapMath.TagColor(e.Tag);
+            Color c;
+            switch (PluginConfig.ColorMode.Value)
+            {
+                case LineColorMode.Biome: c = MapMath.BiomeColor(e.Biome); break;
+                case LineColorMode.Single: c = PluginConfig.SingleColor.Value; break;
+                default: c = MapMath.TagColor(e.Tag); break;
+            }
             sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(c)).Append("><b>")
               .Append(e.HasTag ? e.Tag : "(no tag)").Append("</b></color>");
             if (e.PrefabName.IndexOf("stone", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -214,7 +220,8 @@ namespace PortalLines.UI
             {
                 PortalEntry other = e.Link.Other(e);
                 sb.Append(e.Link.Kind == LinkKind.Confirmed ? "Linked" : "Presumed link")
-                  .Append(" → ").Append(BiomeName(other.Pos))
+                  .Append(" → <color=#").Append(ColorUtility.ToHtmlStringRGB(MapMath.BiomeColor(other.Biome))).Append('>')
+                  .Append(BiomeName(other.Pos)).Append("</color>")
                   .Append(", ").Append(Dist(e.Link.Distance));
                 if (e.Link.Kind != LinkKind.Confirmed && !string.IsNullOrEmpty(e.Link.Reason))
                     sb.Append("\n<alpha=#99>").Append(e.Link.Reason);

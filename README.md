@@ -11,8 +11,8 @@ server.
 
 Open the large map:
 
-- **Lines** between each pair of connected portals, coloured by tag so crossing lines can be told
-  apart. A dashed line means the pair is not confirmed yet: either the only two known portals with
+- **Lines** between each pair of connected portals, each end coloured by its biome and blended
+  along the line so you can see where it goes (or per tag, or a single colour). A dashed line means the pair is not confirmed yet: either the only two known portals with
   that tag (the server pairs them within five seconds), or one end's copy is stale until the next
   refresh.
 - **Pins** at every known portal with the tag as the name. Unconnected portals are tinted red;

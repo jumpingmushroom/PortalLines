@@ -68,6 +68,24 @@ namespace PortalLines.UI
             return true;
         }
 
+        /// <summary>Line colour for a biome, from the configurable palette.</summary>
+        public static Color BiomeColor(Heightmap.Biome biome)
+        {
+            switch (biome)
+            {
+                case Heightmap.Biome.Meadows: return PluginConfig.MeadowsColor.Value;
+                case Heightmap.Biome.BlackForest: return PluginConfig.BlackForestColor.Value;
+                case Heightmap.Biome.Swamp: return PluginConfig.SwampColor.Value;
+                case Heightmap.Biome.Mountain: return PluginConfig.MountainColor.Value;
+                case Heightmap.Biome.Plains: return PluginConfig.PlainsColor.Value;
+                case Heightmap.Biome.Mistlands: return PluginConfig.MistlandsColor.Value;
+                case Heightmap.Biome.AshLands: return PluginConfig.AshlandsColor.Value;
+                case Heightmap.Biome.DeepNorth: return PluginConfig.DeepNorthColor.Value;
+                case Heightmap.Biome.Ocean: return PluginConfig.OceanColor.Value;
+                default: return new Color(0.82f, 0.82f, 0.82f);
+            }
+        }
+
         /// <summary>A stable, well-separated colour for a tag. Untagged portals get a neutral grey.</summary>
         public static Color TagColor(string tag)
         {

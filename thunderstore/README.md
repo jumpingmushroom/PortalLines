@@ -2,7 +2,8 @@
 
 Draws every portal you know about on the large map, with a line to the portal it is connected to.
 
-- Lines are coloured by tag. Dashed means the pair is not confirmed yet.
+- Lines blend from the biome colour of one end to the other, so each tells you where it goes
+  (per-tag and single-colour modes too). Dashed means the pair is not confirmed yet.
 - Every known portal gets a pin with its tag. Unconnected portals are tinted red; a tag shared by
   three or more portals (only one pair can ever connect) is tinted orange.
 - Hover a portal to highlight its line and see tag, destination biome, distance and link state.

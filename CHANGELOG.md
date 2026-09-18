@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — biome gradient
+
+- New default line colouring: each end takes the colour of the biome it sits in and the line
+  blends between them, so a line tells you where it goes. Per-tag and single colour remain as
+  `ColorMode` options. The hover panel names the destination biome in the same colour.
+- The nine biome colours are configurable ("Biome colours" section, live in ConfigurationManager).
+  Black Forest is a teal-pine rather than the map's green so a Meadows-to-Black-Forest line
+  actually changes colour.
+
 ## 0.3.0 — map toggle and hover
 
 - A "Portal lines" checkbox on the large map, cloned from the map's own toggles and placed one

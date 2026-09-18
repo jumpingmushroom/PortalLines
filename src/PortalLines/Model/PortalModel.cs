@@ -29,6 +29,9 @@ namespace PortalLines.Model
         public int PrefabHash;
         public string PrefabName = "";
 
+        /// <summary>Biome at the portal's position, from the world generator.</summary>
+        public Heightmap.Biome Biome;
+
         /// <summary>Known only from the disk cache; no ZDO for it has arrived this session.</summary>
         public bool Remembered;
 
