@@ -1,13 +1,23 @@
 # Portal Lines
 
-A client-side Valheim mod that draws every portal you know about on the map, with a line to the
-portal it is connected to.
+A client-side Valheim mod that turns your portals into a network you can see and use from the
+map: every portal you know about, a line to the portal it is connected to, and a route planner
+that finds the fastest way to anywhere through them.
+
+**Shift-click a spot on the map** and it works out where to walk, which portal to take and where
+you come out, then draws the route and tells you what it saves: *613 m on foot instead of
+3.5 km*. Hover any portal to see where it goes. Lines are coloured by biome, so a line from
+Meadows into the Mountains blends green to ice blue.
 
 Built against **Valheim 1.0.12**. Requires BepInEx 5 and
 [Jotunn](https://thunderstore.io/c/valheim/p/ValheimModding/Jotunn/). Nothing to install on the
 server.
 
 ## Screenshots
+
+**Route planner.** Shift-click a spot: 613 m on foot via the Trader portal instead of 3.5 km direct.
+
+![Route](docs/images/route.jpg)
 
 **The network.** Every known portal, with a line to the portal it is connected to.
 
@@ -21,13 +31,16 @@ server.
 
 ![Biome gradient](docs/images/gradient.jpg)
 
-**Route planner.** Shift-click a spot: 613 m on foot via the Trader portal instead of 3.5 km direct.
-
-![Route](docs/images/route.jpg)
-
 ## What it does
 
-Open the large map:
+**Route planner.** Shift-click anywhere on the large map. The mod searches every known portal
+link for the fastest way there: walk to a portal, hop, walk on, chaining through hubs when that
+helps. Walking legs are dotted, hops are drawn bright with everything else dimmed, and a panel
+beside the destination gives the total on foot, the hops in order with their destination biome,
+and the direct distance for comparison. The route follows you as you move. Shift-right-click
+clears it.
+
+**The map**, whenever it is open:
 
 - **Lines** between each pair of connected portals, each end coloured by its biome and blended
   along the line so you can see where it goes (or per tag, or a single colour). A dashed line means the pair is not confirmed yet: either the only two known portals with
@@ -37,11 +50,6 @@ Open the large map:
   portals whose tag is shared by three or more (only one pair can ever connect) are tinted orange.
   The pins are never saved or shared through the cartography table, and the map's own portal icon
   filter hides them.
-
-**Shift-click** anywhere on the map to plan the fastest way there through the portals: walk to a
-portal, hop, walk on, chaining through hubs if it helps. Walking legs are dotted, hops are bright,
-and a panel beside the destination shows the total on foot against the direct distance.
-Shift-right-click clears the route.
 
 Hover a portal pin to highlight its line and dim the rest, with a panel showing its tag, link
 state, destination biome and distances. A "Portal lines" checkbox on the map (and an optional

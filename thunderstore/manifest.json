@@ -2,7 +2,7 @@
   "name": "PortalLines",
   "version_number": "0.5.0",
   "website_url": "https://github.com/jumpingmushroom/PortalLines",
-  "description": "Draws every portal you know about on the map, with a line to the portal it is connected to.",
+  "description": "Portal network on the map: every portal you know, a line to its partner, and a shift-click route planner that finds the fastest way anywhere through your portals.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2350",
     "ValheimModding-Jotunn-2.30.0"
