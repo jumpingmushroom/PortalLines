@@ -27,12 +27,16 @@ and it can ask the server for any portal by id — the same request the game mak
 you are standing next to. So the mod knows every portal you have been near this session, plus the
 far end of each one. On the hosting player's machine, or in singleplayer, it knows the whole world.
 
-Remembering portals across sessions is planned for 0.2 (see `PLAN.md`).
+Between sessions it remembers portals on disk, per world, in `BepInEx/config/PortalLines/`. At
+login every remembered portal is drawn faded, with a dashed line to where its partner was last
+seen; each turns solid once a live copy arrives. A remembered portal that is missing from a
+loaded area in range is forgotten: it was demolished. `ForgetAfterDays` can also age them out.
 
 ## Console
 
 `portallines list` prints every known portal with its tag, position and link state;
-`portallines links` the lines; `portallines refresh` forces a rescan.
+`portallines links` the lines; `portallines refresh` forces a rescan; `portallines forget`
+clears this world's remembered portals.
 
 ## Building
 

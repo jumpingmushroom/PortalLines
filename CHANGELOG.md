@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 — remembers portals between sessions
+
+- Portals are remembered on disk per world (`BepInEx/config/PortalLines/<world>-<id>.tsv`), so
+  the map is populated from the moment you log in instead of only after walking near each
+  portal again. Remembered portals and their lines are drawn faded until a live copy confirms
+  them, then switch to full strength.
+- Remembered links come from where the pair was last seen connected, falling back to the only
+  two known portals with a tag. Both are drawn dashed as presumed until the server confirms.
+- A remembered portal whose area is loaded and in range but has no live copy is forgotten after
+  a short grace period: it was demolished.
+- New config: `RememberPortals`, `ForgetAfterDays` (0 keeps forever), `RememberedAlpha`.
+- New console command `portallines forget` clears this world's memory.
+
 ## 0.1.1 — verification fixes
 
 - The one-shot map layout report now runs after the first scan, so its portal counts are real.

@@ -11,24 +11,39 @@ namespace PortalLines.Model
         /// <summary>
         /// The game has not shown us a mutual connection, but the evidence says these two are (or
         /// are about to be) paired: one end names the other while the other end's copy is stale,
-        /// or they are the only two portals we know with this tag.
+        /// a remembered partner position points here, or they are the only two portals we know
+        /// with this tag.
         /// </summary>
         Presumed
     }
 
     public sealed class PortalEntry
     {
+        /// <summary>Stable identity across sessions: the position on a 1 m grid. Portals do not move.</summary>
+        public string Key = "";
+
+        /// <summary>Session-scoped ZDO id; None for a portal known only from the disk cache.</summary>
         public ZDOID Id;
         public Vector3 Pos;
         public string Tag = "";
         public int PrefabHash;
         public string PrefabName = "";
 
+        /// <summary>Known only from the disk cache; no ZDO for it has arrived this session.</summary>
+        public bool Remembered;
+
+        /// <summary>Unix seconds when a live ZDO for this portal was last seen.</summary>
+        public long LastSeen;
+
         /// <summary>What this portal's ZDO says its partner is. None when unconnected.</summary>
         public ZDOID PartnerId;
 
         /// <summary>True when the partner's ZDO is present on this client.</summary>
         public bool PartnerLoaded;
+
+        /// <summary>Where the partner was the last time a confirmed link was seen, if ever.</summary>
+        public bool HasPartnerPos;
+        public Vector3 PartnerPos;
 
         /// <summary>Inside the active area right now, so the ZDO is live rather than a stale copy.</summary>
         public bool InActiveArea;
@@ -44,6 +59,11 @@ namespace PortalLines.Model
         public bool Conflict => TagCount > 2;
 
         public bool HasTag => !string.IsNullOrEmpty(Tag);
+
+        public static string MakeKey(Vector3 pos)
+        {
+            return Mathf.RoundToInt(pos.x) + "," + Mathf.RoundToInt(pos.z);
+        }
     }
 
     public sealed class PortalLink
@@ -53,6 +73,9 @@ namespace PortalLines.Model
         public LinkKind Kind;
         public string Tag = "";
         public float Distance;
+
+        /// <summary>At least one end is known only from the cache.</summary>
+        public bool AnyRemembered => A.Remembered || B.Remembered;
 
         public PortalEntry Other(PortalEntry e)
         {
@@ -70,6 +93,9 @@ namespace PortalLines.Model
 
         /// <summary>Partners named by a known portal whose ZDO has not arrived yet.</summary>
         public int PendingPartners;
+
+        /// <summary>Portals known only from the cache.</summary>
+        public int RememberedCount;
 
         /// <summary>True on the host or in singleplayer, where the list is the whole world.</summary>
         public bool Authoritative;

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>PortalLines</AssemblyName>
     <RootNamespace>PortalLines</RootNamespace>
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
     <Description>Draws portals and their connections on the Valheim map.</Description>
   </PropertyGroup>
 

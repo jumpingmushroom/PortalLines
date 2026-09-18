@@ -6,7 +6,8 @@ using UnityEngine;
 namespace PortalLines.Core
 {
     /// <summary>
-    /// Everything this client knows about portals, rebuilt from ZDOMan on each scan.
+    /// Everything this client knows about portals, rebuilt from ZDOMan and the disk cache on each
+    /// scan.
     ///
     /// ZDOMan.GetPortalList() is the whole world on the host and, on a client, every portal ZDO
     /// the server has ever sent this session — clients never discard persistent ZDOs, they only
@@ -14,14 +15,21 @@ namespace PortalLines.Core
     /// only the server writes. For a partner we have not received, ZDOMan.RequestZDO asks the
     /// server to send it regardless of distance; TeleportWorld makes the same request for the
     /// portal you stand next to, so this is traffic the game already generates.
+    ///
+    /// Portals remembered from earlier sessions fill in until a live ZDO replaces them, and are
+    /// dropped once their area is loaded and in range without one.
     /// </summary>
     public static class PortalRegistry
     {
         /// <summary>Seconds before the same ZDO is requested again.</summary>
         private const float RequestCooldown = 8f;
 
+        /// <summary>Seconds a loaded, in-range area may lack a remembered portal before it is forgotten.</summary>
+        private const float MissingGrace = 12f;
+
         private static readonly Dictionary<ZDOID, float> _requested = new Dictionary<ZDOID, float>();
         private static readonly Dictionary<string, List<PortalEntry>> _byTag = new Dictionary<string, List<PortalEntry>>();
+        private static readonly List<PortalCache.Entry> _scratchCache = new List<PortalCache.Entry>();
         private static readonly StringBuilder _sig = new StringBuilder(1024);
 
         private static int _version;
@@ -38,7 +46,7 @@ namespace PortalLines.Core
             RequestsSent = 0;
         }
 
-        /// <summary>Rebuild the snapshot from ZDOMan. Cheap: a few hundred dictionary lookups at most.</summary>
+        /// <summary>Rebuild the snapshot. Cheap: a few hundred dictionary lookups at most.</summary>
         public static void Scan()
         {
             ZDOMan man = ZDOMan.instance;
@@ -51,11 +59,17 @@ namespace PortalLines.Core
                 return;
             }
 
+            PortalCache.EnsureLoaded();
+
             var next = new PortalSnapshot { Authoritative = net.IsServer() };
             var byId = new Dictionary<ZDOID, PortalEntry>();
+            var byKey = new Dictionary<string, PortalEntry>();
             Vector3 refPos = net.GetReferencePosition();
             ZNetScene scene = ZNetScene.instance;
+            ZoneSystem zones = ZoneSystem.instance;
+            long now = PortalCache.Now();
 
+            // 1. Live ZDOs.
             List<ZDO> zdos = man.GetPortalList();
             for (int i = 0; i < zdos.Count; i++)
             {
@@ -70,7 +84,9 @@ namespace PortalLines.Core
                     Tag = zdo.GetString(ZDOVars.s_tag) ?? "",
                     PrefabHash = zdo.GetPrefab(),
                     PartnerId = zdo.GetConnectionZDOID(ZDOExtraData.ConnectionType.Portal),
+                    LastSeen = now,
                 };
+                e.Key = PortalEntry.MakeKey(e.Pos);
                 e.InActiveArea = ZNetScene.InActiveArea(e.Pos, refPos);
 
                 if (scene != null)
@@ -79,8 +95,52 @@ namespace PortalLines.Core
                     e.PrefabName = prefab != null ? prefab.name : e.PrefabHash.ToString();
                 }
 
+                PortalCache.Entry cached = PortalCache.Get(e.Key);
+                if (cached != null)
+                {
+                    e.HasPartnerPos = cached.HasPartnerPos;
+                    e.PartnerPos = cached.PartnerPos;
+                    PortalCache.NotePresent(cached);
+                }
+
+                if (byKey.ContainsKey(e.Key))
+                    continue; // two ZDOs on one grid cell: keep the first
                 byId[e.Id] = e;
+                byKey[e.Key] = e;
                 next.Portals.Add(e);
+            }
+
+            // 2. Remembered portals with no live ZDO. Drop the ones that should be here but are not.
+            if (PortalCache.Loaded)
+            {
+                _scratchCache.Clear();
+                _scratchCache.AddRange(PortalCache.Entries);
+                for (int i = 0; i < _scratchCache.Count; i++)
+                {
+                    PortalCache.Entry c = _scratchCache[i];
+                    if (byKey.ContainsKey(c.Key))
+                        continue;
+
+                    bool areaReady = zones != null && zones.IsZoneLoaded(c.Pos) && ZNetScene.InActiveArea(c.Pos, refPos);
+                    if (areaReady && PortalCache.NoteMissing(c, Time.time, MissingGrace))
+                        continue;
+
+                    var e = new PortalEntry
+                    {
+                        Key = c.Key,
+                        Id = ZDOID.None,
+                        Pos = c.Pos,
+                        Tag = c.Tag ?? "",
+                        PrefabName = c.Prefab ?? "",
+                        Remembered = true,
+                        LastSeen = c.LastSeen,
+                        HasPartnerPos = c.HasPartnerPos,
+                        PartnerPos = c.PartnerPos,
+                    };
+                    byKey[e.Key] = e;
+                    next.Portals.Add(e);
+                    next.RememberedCount++;
+                }
             }
 
             // Deterministic order so the signature is stable and the console listing reads well.
@@ -105,13 +165,13 @@ namespace PortalLines.Core
                 for (int i = 0; i < kv.Value.Count; i++)
                     kv.Value[i].TagCount = kv.Value.Count;
 
-            // Pass 1: links the game has written. Mutual means confirmed. One-sided means one copy
-            // is stale (a retag or a re-pair we have not been sent yet); draw it as presumed and let
+            // 3. Links the game has written. Mutual means confirmed. One-sided means one copy is
+            // stale (a retag or a re-pair we have not been sent yet); draw it as presumed and let
             // the refresh sort it out, unless the other end already has a confirmed partner.
             for (int i = 0; i < next.Portals.Count; i++)
             {
                 PortalEntry e = next.Portals[i];
-                if (e.Linked || e.PartnerId.IsNone())
+                if (e.Remembered || e.Linked || e.PartnerId.IsNone())
                     continue;
 
                 PortalEntry p;
@@ -133,8 +193,21 @@ namespace PortalLines.Core
                 AddLink(next, e, p, mutual ? LinkKind.Confirmed : LinkKind.Presumed);
             }
 
-            // Pass 2: exactly two known portals with a tag and no link between them yet. The
-            // server pairs same-tag portals within five seconds, so this is what it will do.
+            // 4. Remembered partner positions: where a confirmed link was last seen. Still only a
+            // presumption — either end may have been retagged since — so tags must still agree.
+            for (int i = 0; i < next.Portals.Count; i++)
+            {
+                PortalEntry e = next.Portals[i];
+                if (e.Linked || !e.HasPartnerPos)
+                    continue;
+                PortalEntry p;
+                if (!byKey.TryGetValue(PortalEntry.MakeKey(e.PartnerPos), out p) || p.Linked || ReferenceEquals(p, e) || p.Tag != e.Tag)
+                    continue;
+                AddLink(next, e, p, LinkKind.Presumed);
+            }
+
+            // 5. Exactly two known portals with a tag and no link between them yet. The server
+            // pairs same-tag portals within five seconds, so this is what it will do.
             foreach (KeyValuePair<string, List<PortalEntry>> kv in _byTag)
             {
                 List<PortalEntry> list = kv.Value;
@@ -142,6 +215,12 @@ namespace PortalLines.Core
                     continue;
                 AddLink(next, list[0], list[1], LinkKind.Presumed);
             }
+
+            // 6. Teach the cache what the live ZDOs said, now that links are known.
+            if (PortalCache.Loaded)
+                for (int i = 0; i < next.Portals.Count; i++)
+                    if (!next.Portals[i].Remembered)
+                        PortalCache.Observe(next.Portals[i], now);
 
             next.Signature = BuildSignature(next);
             if (next.Signature != Snapshot.Signature)
@@ -152,8 +231,8 @@ namespace PortalLines.Core
                 if (PluginConfig.Verbose.Value)
                 {
                     PortalLinesPlugin.Log.LogDebug(string.Format(
-                        "scan: {0} portals, {1} links, {2} pending partner(s), authoritative={3}",
-                        next.Portals.Count, next.Links.Count, next.PendingPartners, next.Authoritative));
+                        "scan: {0} portals ({1} remembered), {2} links, {3} pending partner(s), authoritative={4}",
+                        next.Portals.Count, next.RememberedCount, next.Links.Count, next.PendingPartners, next.Authoritative));
                 }
             }
             else
@@ -179,6 +258,8 @@ namespace PortalLines.Core
             for (int i = 0; i < portals.Count; i++)
             {
                 PortalEntry e = portals[i];
+                if (e.Remembered)
+                    continue;
                 if (!e.InActiveArea)
                     Request(e.Id);
                 if (!e.PartnerId.IsNone() && !e.PartnerLoaded)
@@ -228,10 +309,11 @@ namespace PortalLines.Core
             for (int i = 0; i < snap.Portals.Count; i++)
             {
                 PortalEntry e = snap.Portals[i];
-                _sig.Append(e.Id.ID).Append(':').Append(e.Tag).Append(':')
+                _sig.Append(e.Key).Append(':').Append(e.Tag).Append(':')
+                    .Append(e.Remembered ? 'R' : 'L')
                     .Append(e.Linked ? (e.Link.Kind == LinkKind.Confirmed ? 'C' : 'P') : 'U')
                     .Append(e.Conflict ? '!' : '.')
-                    .Append(e.Linked ? e.Link.Other(e).Id.ID : 0u)
+                    .Append(e.Linked ? e.Link.Other(e).Key : "")
                     .Append(';');
             }
             return _sig.ToString();

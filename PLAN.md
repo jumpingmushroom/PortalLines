@@ -190,7 +190,7 @@ unconnected / conflict (n)". Mouse position → world via `Minimap.ScreenToWorld
 | Version | Scope |
 |---|---|
 | 0.1 | Registry (live + partner fetch + refresh), large-map lines, config, `portallines dump`. Verify §2.7 on the rig. |
-| 0.2 | Disk cache, faded remembered portals, presumed links, conflict/orphan flags, portal pins with right-click guard. |
+| 0.2 | Disk cache, faded remembered portals, presumed links from remembered partner positions. (Conflict/orphan flags and pins shipped in 0.1.) |
 | 0.3 | Hover highlight and tooltip, small-map option, colour polish, README/screenshots, Thunderstore release. |
 | 0.4 | Optional server component for full-world knowledge on dedicated servers. |
 
