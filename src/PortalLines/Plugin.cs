@@ -15,7 +15,7 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.1";
 
         /// <summary>Scan cadence while the large map is closed: cheap, and keeps pins current.</summary>
         private const float IdleScanInterval = 15f;
@@ -117,20 +117,24 @@ namespace PortalLines
             _overlay.EnsureAttached(map);
 
             bool large = map.m_mode == Minimap.MapMode.Large;
-            if (large && !_wasLarge)
-            {
-                // Opening the map: scan now, ask for anything stale, and report the layout once.
-                _nextScan = 0f;
-                _nextRefresh = Time.time + PluginConfig.RefreshInterval.Value;
-                PortalRegistry.RequestRefresh();
-                Diagnostics.ReportOnce(map);
-            }
+            bool opened = large && !_wasLarge;
             _wasLarge = large;
+            if (opened)
+                _nextScan = 0f;
 
             if (Time.time >= _nextScan)
             {
                 _nextScan = Time.time + (large ? PluginConfig.ScanInterval.Value : IdleScanInterval);
                 PortalRegistry.Scan();
+            }
+
+            if (opened)
+            {
+                // Opening the map: ask for anything stale, and report the layout once, after the
+                // scan so the counts in the report are real.
+                _nextRefresh = Time.time + PluginConfig.RefreshInterval.Value;
+                PortalRegistry.RequestRefresh();
+                Diagnostics.ReportOnce(map);
             }
 
             if (large && Time.time >= _nextRefresh)

@@ -1,6 +1,6 @@
 {
   "name": "PortalLines",
-  "version_number": "0.1.0",
+  "version_number": "0.1.1",
   "website_url": "https://github.com/jumpingmushroom/PortalLines",
   "description": "Draws every portal you know about on the map, with a line to the portal it is connected to.",
   "dependencies": [

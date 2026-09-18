@@ -32,8 +32,14 @@ if [ "${1:-}" = "--local" ]; then
     cp "$OUT" "$DEST/"
 else
     echo "==> deploying to $SSH_TARGET:$PLUGIN_DIR"
+    # Replace atomically. Mono memory-maps plugin DLLs, so overwriting the file in place while
+    # the game is running corrupts the loaded image (BadImageFormatException: bad method token
+    # at the next reflection, e.g. Jotunn reading attributes on connect). A rename swaps the
+    # directory entry and leaves the running game's mapping on the old inode.
     ssh "$SSH_TARGET" "mkdir -p '$PLUGIN_DIR'"
-    scp -q "$OUT" "$SSH_TARGET:$PLUGIN_DIR/"
+    scp -q "$OUT" "$SSH_TARGET:$PLUGIN_DIR/.PortalLines.dll.new"
+    ssh "$SSH_TARGET" "mv -f '$PLUGIN_DIR/.PortalLines.dll.new' '$PLUGIN_DIR/PortalLines.dll'; \
+        pgrep -x valheim.x86_64 >/dev/null && echo '    game is running: the new DLL is used on the next launch' || true"
 fi
 
 echo "==> done: $(basename "$OUT") $(stat -c%s "$OUT") bytes"
