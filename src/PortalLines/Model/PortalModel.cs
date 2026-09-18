@@ -74,6 +74,9 @@ namespace PortalLines.Model
         public string Tag = "";
         public float Distance;
 
+        /// <summary>Why a presumed link is presumed; empty for confirmed links.</summary>
+        public string Reason = "";
+
         /// <summary>At least one end is known only from the cache.</summary>
         public bool AnyRemembered => A.Remembered || B.Remembered;
 

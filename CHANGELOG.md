@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — map toggle and hover
+
+- A "Portal lines" checkbox on the large map, cloned from the map's own toggles and placed one
+  row above them. Also a configurable hotkey (unbound by default).
+- Hovering a portal on the large map highlights its line and dims every other line, and shows
+  a panel with the tag, link state, destination biome, distance, distance from you, and for a
+  remembered portal when it was last seen. With lines switched off, hovering still shows that
+  one portal's line.
+- Presumed links now say why they are presumed.
+
 ## 0.2.0 — remembers portals between sessions
 
 - Portals are remembered on disk per world (`BepInEx/config/PortalLines/<world>-<id>.tsv`), so

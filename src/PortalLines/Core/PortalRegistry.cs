@@ -190,7 +190,7 @@ namespace PortalLines.Core
                 if (!mutual && !e.InActiveArea)
                     Request(e.Id); // our copy is the stale one; ask for it
 
-                AddLink(next, e, p, mutual ? LinkKind.Confirmed : LinkKind.Presumed);
+                AddLink(next, e, p, mutual ? LinkKind.Confirmed : LinkKind.Presumed, mutual ? "" : "one end's copy is stale, refreshing");
             }
 
             // 4. Remembered partner positions: where a confirmed link was last seen. Still only a
@@ -203,7 +203,7 @@ namespace PortalLines.Core
                 PortalEntry p;
                 if (!byKey.TryGetValue(PortalEntry.MakeKey(e.PartnerPos), out p) || p.Linked || ReferenceEquals(p, e) || p.Tag != e.Tag)
                     continue;
-                AddLink(next, e, p, LinkKind.Presumed);
+                AddLink(next, e, p, LinkKind.Presumed, "remembered pair, not confirmed this session");
             }
 
             // 5. Exactly two known portals with a tag and no link between them yet. The server
@@ -213,7 +213,7 @@ namespace PortalLines.Core
                 List<PortalEntry> list = kv.Value;
                 if (list.Count != 2 || list[0].Linked || list[1].Linked)
                     continue;
-                AddLink(next, list[0], list[1], LinkKind.Presumed);
+                AddLink(next, list[0], list[1], LinkKind.Presumed, "only two portals with this tag");
             }
 
             // 6. Teach the cache what the live ZDOs said, now that links are known.
@@ -267,7 +267,7 @@ namespace PortalLines.Core
             }
         }
 
-        private static void AddLink(PortalSnapshot snap, PortalEntry a, PortalEntry b, LinkKind kind)
+        private static void AddLink(PortalSnapshot snap, PortalEntry a, PortalEntry b, LinkKind kind, string reason)
         {
             var link = new PortalLink
             {
@@ -276,6 +276,7 @@ namespace PortalLines.Core
                 Kind = kind,
                 Tag = a.Tag,
                 Distance = Utils.DistanceXZ(a.Pos, b.Pos),
+                Reason = reason,
             };
             a.Link = link;
             b.Link = link;
