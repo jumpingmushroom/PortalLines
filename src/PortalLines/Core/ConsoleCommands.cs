@@ -30,16 +30,23 @@ namespace PortalLines.Core
                         case "links": Links(args.Context); break;
                         case "refresh": Refresh(args.Context); break;
                         case "requests":
-                            args.Context.AddString("PortalLines: " + PortalRegistry.RequestsSent + " ZDO request(s) sent this world.");
+                            Say(args.Context, "PortalLines: " + PortalRegistry.RequestsSent + " ZDO request(s) sent this world.");
                             break;
                         default:
-                            args.Context.AddString("portallines list     - every known portal: tag, position, partner, state");
-                            args.Context.AddString("portallines links    - every drawn line and whether it is confirmed");
-                            args.Context.AddString("portallines refresh  - rescan now and ask the server for stale copies");
-                            args.Context.AddString("portallines requests - how many ZDO requests have been sent");
+                            Say(args.Context, "portallines list     - every known portal: tag, position, partner, state");
+                            Say(args.Context, "portallines links    - every drawn line and whether it is confirmed");
+                            Say(args.Context, "portallines refresh  - rescan now and ask the server for stale copies");
+                            Say(args.Context, "portallines requests - how many ZDO requests have been sent");
                             break;
                     }
                 });
+        }
+
+        /// <summary>Console output also goes to the BepInEx log, so it can be read back from a file.</summary>
+        private static void Say(Terminal ctx, string line)
+        {
+            ctx.AddString(line);
+            PortalLinesPlugin.Log.LogInfo(line);
         }
 
         private static void Refresh(Terminal ctx)
@@ -47,7 +54,7 @@ namespace PortalLines.Core
             PortalRegistry.Scan();
             PortalRegistry.RequestRefresh();
             PortalSnapshot s = PortalRegistry.Snapshot;
-            ctx.AddString(string.Format("PortalLines: {0} portal(s), {1} link(s), {2} partner(s) pending{3}",
+            Say(ctx, string.Format("PortalLines: {0} portal(s), {1} link(s), {2} partner(s) pending{3}",
                 s.Portals.Count, s.Links.Count, s.PendingPartners,
                 s.Authoritative ? " (host: this is the whole world)" : ""));
         }
@@ -56,7 +63,7 @@ namespace PortalLines.Core
         {
             PortalRegistry.Scan();
             PortalSnapshot s = PortalRegistry.Snapshot;
-            ctx.AddString(string.Format("PortalLines: {0} known portal(s){1}", s.Portals.Count,
+            Say(ctx, string.Format("PortalLines: {0} known portal(s){1}", s.Portals.Count,
                 s.Authoritative ? " (host: whole world)" : " (client: seen this session)"));
 
             for (int i = 0; i < s.Portals.Count; i++)
@@ -70,7 +77,7 @@ namespace PortalLines.Core
                 else
                     state = e.PartnerLoaded ? "stale link" : "partner not loaded";
 
-                ctx.AddString(string.Format("  \"{0}\"  ({1:0},{2:0})  {3}  {4}{5}{6}",
+                Say(ctx, string.Format("  \"{0}\"  ({1:0},{2:0})  {3}  {4}{5}{6}",
                     e.Tag, e.Pos.x, e.Pos.z, e.PrefabName, state,
                     e.InActiveArea ? "  [near]" : "",
                     e.Conflict ? "  x" + e.TagCount : ""));
@@ -80,11 +87,11 @@ namespace PortalLines.Core
         private static void Links(Terminal ctx)
         {
             PortalSnapshot s = PortalRegistry.Snapshot;
-            ctx.AddString("PortalLines: " + s.Links.Count + " link(s)");
+            Say(ctx, "PortalLines: " + s.Links.Count + " link(s)");
             for (int i = 0; i < s.Links.Count; i++)
             {
                 PortalLink l = s.Links[i];
-                ctx.AddString(string.Format("  \"{0}\"  ({1:0},{2:0}) <-> ({3:0},{4:0})  {5:0} m  {6}",
+                Say(ctx, string.Format("  \"{0}\"  ({1:0},{2:0}) <-> ({3:0},{4:0})  {5:0} m  {6}",
                     l.Tag, l.A.Pos.x, l.A.Pos.z, l.B.Pos.x, l.B.Pos.z, l.Distance,
                     l.Kind == LinkKind.Confirmed ? "confirmed" : "presumed"));
             }

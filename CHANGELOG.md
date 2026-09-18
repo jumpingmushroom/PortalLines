@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — verification fixes
+
+- The one-shot map layout report now runs after the first scan, so its portal counts are real.
+- Console command output is mirrored to the BepInEx log, so it can be read back from a file.
+- `build/deploy.sh` replaces the DLL atomically. Overwriting it in place while the game runs
+  corrupts the memory-mapped assembly and breaks the next server connection.
+
 ## 0.1.0 — first cut
 
 - Lines on the large map between every pair of connected portals the client knows about.
