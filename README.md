@@ -20,6 +20,10 @@ Open the large map:
   The pins are never saved or shared through the cartography table, and the map's own portal icon
   filter hides them.
 
+Hover a portal pin to highlight its line and dim the rest, with a panel showing its tag, link
+state, destination biome and distances. A "Portal lines" checkbox on the map (and an optional
+hotkey) hides the lines; hovering still peeks at one portal's line while they are hidden.
+
 ## How it knows about portals
 
 The game only sends a client the portals near it, but a client never forgets one it has received,

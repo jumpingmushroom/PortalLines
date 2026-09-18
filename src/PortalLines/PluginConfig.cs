@@ -30,6 +30,11 @@ namespace PortalLines
         public static ConfigEntry<bool> ShowPresumed;
         public static ConfigEntry<bool> Outline;
         public static ConfigEntry<bool> ShowOnMinimap;
+        public static ConfigEntry<bool> MapToggle;
+        public static ConfigEntry<KeyboardShortcut> ToggleKey;
+        public static ConfigEntry<bool> HoverEnabled;
+        public static ConfigEntry<float> HoverRadius;
+        public static ConfigEntry<float> FocusDim;
 
         public static ConfigEntry<bool> PinsEnabled;
         public static ConfigEntry<bool> ShowTags;
@@ -86,6 +91,28 @@ namespace PortalLines
 
             ShowOnMinimap = cfg.Bind("Lines", "ShowOnMinimap", false,
                 new ConfigDescription("Also draw lines on the small minimap in the corner.", null, Attr(60)));
+
+            MapToggle = cfg.Bind("Lines", "MapToggle", true,
+                new ConfigDescription("Show a \"Portal lines\" checkbox on the large map, above the map's own toggles.",
+                    null, Attr(58)));
+
+            ToggleKey = cfg.Bind("Lines", "ToggleKey", KeyboardShortcut.Empty,
+                new ConfigDescription("Hotkey that shows and hides the lines. Unbound by default.", null, Attr(57)));
+
+            HoverEnabled = cfg.Bind("Hover", "Enabled", true,
+                new ConfigDescription(
+                    "Hovering a portal on the large map highlights its line, dims the others, and " +
+                    "shows its tag, destination biome, distance and link state. With lines switched " +
+                    "off, hovering still shows that one portal's line.",
+                    null, Attr(56)));
+
+            HoverRadius = cfg.Bind("Hover", "Radius", 28f,
+                new ConfigDescription("How close the cursor must be to a portal, in screen pixels.",
+                    new AcceptableValueRange<float>(8f, 80f), Attr(55)));
+
+            FocusDim = cfg.Bind("Hover", "DimOthers", 0.12f,
+                new ConfigDescription("Opacity multiplier for every other line while a portal is hovered.",
+                    new AcceptableValueRange<float>(0f, 1f), Attr(54)));
 
             PinsEnabled = cfg.Bind("Pins", "Enabled", true,
                 new ConfigDescription(
@@ -160,6 +187,8 @@ namespace PortalLines
             ShowOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
 
             RememberedAlpha.SettingChanged += (s, e) => Raise(StyleChanged);
+            FocusDim.SettingChanged += (s, e) => Raise(StyleChanged);
+            MapToggle.SettingChanged += (s, e) => Raise(StyleChanged);
 
             PinsEnabled.SettingChanged += (s, e) => Raise(PinsChanged);
             ShowTags.SettingChanged += (s, e) => Raise(PinsChanged);

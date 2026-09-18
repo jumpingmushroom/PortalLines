@@ -15,7 +15,18 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "0.3.0";
+
+        /// <summary>Never toggle while the player is typing.</summary>
+        private static bool InputBlocked()
+        {
+            if (Console.IsVisible()) return true;
+            if (Menu.IsVisible()) return true;
+            if (TextInput.IsVisible()) return true;
+            if (Minimap.InTextInput()) return true;
+            if (Chat.instance != null && Chat.instance.HasFocus()) return true;
+            return false;
+        }
 
         /// <summary>Scan cadence while the large map is closed: cheap, and keeps pins current.</summary>
         private const float IdleScanInterval = 15f;
@@ -24,6 +35,8 @@ namespace PortalLines
 
         private readonly MapOverlay _overlay = new MapOverlay();
         private readonly PortalPins _pins = new PortalPins();
+        private readonly MapToggle _toggle = new MapToggle();
+        private readonly PortalHover _hover = new PortalHover();
         private Harmony _harmony;
 
         private float _nextScan;
@@ -54,6 +67,8 @@ namespace PortalLines
             PluginConfig.StyleChanged -= OnStyleChanged;
             PluginConfig.PinsChanged -= OnPinsChanged;
             _overlay.Destroy();
+            _toggle.Destroy();
+            _hover.Destroy();
             _pins.Clear();
             PortalCache.Unload();
             if (_harmony != null)
@@ -63,6 +78,7 @@ namespace PortalLines
         private void OnStyleChanged()
         {
             _overlay.MarkStyleDirty();
+            _toggle.Sync();
         }
 
         private void OnPinsChanged()
@@ -74,6 +90,8 @@ namespace PortalLines
         private void LocalPlayerGone()
         {
             _overlay.Destroy();
+            _toggle.Destroy();
+            _hover.Destroy();
             _pins.Clear();
             PortalRegistry.Clear();
             PortalCache.Unload(); // saves if dirty
@@ -118,6 +136,12 @@ namespace PortalLines
                 return;
 
             _overlay.EnsureAttached(map);
+            if (!_toggle.Created)
+                _toggle.Create(map);
+            _toggle.SetVisible(PluginConfig.MapToggle.Value);
+
+            if (PluginConfig.ToggleKey.Value.IsDown() && !InputBlocked())
+                PluginConfig.LinesEnabled.Value = !PluginConfig.LinesEnabled.Value;
 
             bool large = map.m_mode == Minimap.MapMode.Large;
             bool opened = large && !_wasLarge;
@@ -147,6 +171,11 @@ namespace PortalLines
             }
 
             _pins.Sync(PortalRegistry.Snapshot);
+
+            if (large)
+                _hover.Update(map, PortalRegistry.Snapshot);
+            else
+                _hover.Clear();
 
             if (Time.time >= _nextSave)
             {

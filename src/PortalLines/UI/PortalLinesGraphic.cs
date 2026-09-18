@@ -25,6 +25,7 @@ namespace PortalLines.UI
         private Rect _lastUv;
         private Rect _lastRect;
         private int _lastVersion = -1;
+        private int _lastHover = -1;
         private bool _styleDirty = true;
 
         private static readonly List<UIVertex> s_verts = new List<UIVertex>(4);
@@ -42,12 +43,14 @@ namespace PortalLines.UI
             Rect uv = MapImage.uvRect;
             Rect rect = MapImage.rectTransform.rect;
             int version = PortalRegistry.Snapshot.Version;
+            int hover = IsLarge ? HoverState.Version : 0;
 
-            if (_styleDirty || uv != _lastUv || rect != _lastRect || version != _lastVersion)
+            if (_styleDirty || uv != _lastUv || rect != _lastRect || version != _lastVersion || hover != _lastHover)
             {
                 _lastUv = uv;
                 _lastRect = rect;
                 _lastVersion = version;
+                _lastHover = hover;
                 _styleDirty = false;
                 SetVerticesDirty();
             }
@@ -58,12 +61,19 @@ namespace PortalLines.UI
             vh.Clear();
 
             Minimap map = Minimap.instance;
-            if (map == null || MapImage == null || !PluginConfig.LinesEnabled.Value)
+            if (map == null || MapImage == null)
                 return;
 
             PortalSnapshot snap = PortalRegistry.Snapshot;
             if (snap.Links.Count == 0)
                 return;
+
+            // With lines switched off, hovering a portal still peeks at its own line.
+            bool linesOn = PluginConfig.LinesEnabled.Value;
+            string focus = IsLarge && HoverState.Entry != null ? HoverState.Entry.Key : null;
+            if (!linesOn && focus == null)
+                return;
+            float focusDim = PluginConfig.FocusDim.Value;
 
             Rect uv = MapImage.uvRect;
             Rect rect = MapImage.rectTransform.rect;
@@ -88,6 +98,10 @@ namespace PortalLines.UI
                 if (dashed && !showPresumed)
                     continue;
 
+                bool focused = focus != null && (link.A.Key == focus || link.B.Key == focus);
+                if (!linesOn && !focused)
+                    continue;
+
                 Vector2 a = MapMath.WorldToLocal(map, link.A.Pos, uv, rect);
                 Vector2 b = MapMath.WorldToLocal(map, link.B.Pos, uv, rect);
                 if (!MapMath.ClipToRect(ref a, ref b, clip))
@@ -98,9 +112,25 @@ namespace PortalLines.UI
                 if (link.AnyRemembered)
                     c.a *= rememberedAlpha;
 
+                float w = width;
+                if (focus != null)
+                {
+                    if (focused)
+                    {
+                        c.a = Mathf.Max(c.a, 0.95f);
+                        w += 1.5f;
+                    }
+                    else
+                    {
+                        c.a *= focusDim;
+                    }
+                }
+                Color oc = outlineColor;
+                oc.a = 0.55f * c.a;
+
                 if (outline)
-                    AddLine(vh, a, b, width + 2f, outlineColor, dashed);
-                AddLine(vh, a, b, width, c, dashed);
+                    AddLine(vh, a, b, w + 2f, oc, dashed);
+                AddLine(vh, a, b, w, c, dashed);
             }
         }
 
