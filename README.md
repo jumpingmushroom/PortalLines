@@ -7,6 +7,24 @@ Built against **Valheim 1.0.12**. Requires BepInEx 5 and
 [Jotunn](https://thunderstore.io/c/valheim/p/ValheimModding/Jotunn/). Nothing to install on the
 server.
 
+## Screenshots
+
+**The network.** Every known portal, with a line to the portal it is connected to.
+
+![Portal lines](docs/images/lines.jpg)
+
+**Hover.** The portal's line lights up, the rest dim, and the panel says where it goes.
+
+![Hover](docs/images/hover.jpg)
+
+**Biome gradient.** Each end takes its biome's colour: lime for Meadows into teal for Black Forest.
+
+![Biome gradient](docs/images/gradient.jpg)
+
+**Route planner.** Shift-click a spot: 613 m on foot via the Trader portal instead of 3.5 km direct.
+
+![Route](docs/images/route.jpg)
+
 ## What it does
 
 Open the large map:
