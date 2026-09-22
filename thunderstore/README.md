@@ -6,6 +6,8 @@ through them.
 
 **Shift-click a spot on the map.** The mod works out where to walk, which portal to take and where
 you come out, draws the route, and tells you what it saves: *613 m on foot instead of 3.5 km*.
+Close the map and the **minimap follows the route**: the leg to walk next, and an arrow on the
+rim pointing at it when it is out of view. The route clears itself when you arrive.
 
 ![Route](https://raw.githubusercontent.com/jumpingmushroom/PortalLines/v0.5.0/docs/images/route.jpg)
 
@@ -27,6 +29,6 @@ Client-side only; nothing to install on the server. The mod knows every portal y
 and the far end of each, fetched with the same request the game makes for the portal you are
 standing next to. The hosting player and singleplayer see the whole world.
 
-Console: `portallines list | links | refresh | forget`.
+Console: `portallines list | links | refresh | forget | route <x> <z> | route <tag> | route clear`.
 
 Requires BepInEx and Jotunn. Source and issues: https://github.com/jumpingmushroom/PortalLines

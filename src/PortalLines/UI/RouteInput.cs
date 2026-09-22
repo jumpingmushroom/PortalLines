@@ -6,7 +6,8 @@ namespace PortalLines.UI
 {
     /// <summary>
     /// Shift-click sets the route destination, shift-right-click clears it. Also owns the
-    /// summary panel drawn beside the destination.
+    /// summary panel drawn beside the destination. The route itself is kept current whenever
+    /// the player exists, large map or not, so the minimap can follow it.
     /// </summary>
     internal sealed class RouteInput
     {
@@ -33,7 +34,24 @@ namespace PortalLines.UI
                 _map = map;
             }
 
-            if (!large || !PluginConfig.RouteEnabled.Value)
+            if (!PluginConfig.RouteEnabled.Value)
+            {
+                _panel.Hide();
+                return;
+            }
+
+            Player player = Player.m_localPlayer;
+            if (RouteState.Active && player != null)
+            {
+                if (PluginConfig.ClearRouteKey.Value.IsDown() && !PortalLinesPlugin.InputBlocked())
+                    RouteState.Clear();
+                else if (RouteState.CheckArrival(player.transform.position, PluginConfig.ArriveDistance.Value))
+                    player.Message(MessageHud.MessageType.TopLeft, "Route: arrived");
+                else
+                    RouteState.Update(PortalRegistry.Snapshot, player.transform.position);
+            }
+
+            if (!large)
             {
                 _panel.Hide();
                 return;
@@ -58,10 +76,6 @@ namespace PortalLines.UI
                 _panel.Hide();
                 return;
             }
-
-            Player player = Player.m_localPlayer;
-            if (player != null)
-                RouteState.Update(PortalRegistry.Snapshot, player.transform.position);
 
             if (!_panel.Created && !_panel.Create(map, "PortalLinesRoute"))
                 return;

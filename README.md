@@ -48,6 +48,13 @@ beside the destination gives the total on foot, the hops in order with their des
 and the direct distance for comparison. The route follows you as you move. Shift-right-click
 clears it.
 
+**Minimap navigation.** With a route set, the small minimap shows the walking leg from you to
+the next portal or to the destination, and an arrow on its rim when that point is out of view.
+The minimap never rotates, so the arrow is a compass heading. Hop lines are left off the minimap:
+they point somewhere you are not walking. The route clears itself when you arrive (within 20 m
+by default), or with an optional hotkey. `portallines route <x> <z>`, `portallines route <tag>`
+and `portallines route clear` do the same from the console.
+
 **The map**, whenever it is open:
 
 - **Lines** between each pair of connected portals, each end coloured by its biome and blended

@@ -101,6 +101,19 @@ namespace PortalLines.UI
             }
         }
 
+        /// <summary>A triangle pointing along <paramref name="dir"/> with its tip at <paramref name="tip"/>.</summary>
+        public static void AddArrowHead(VertexHelper vh, Vector2 tip, Vector2 dir, float length, float halfWidth, Color color)
+        {
+            Vector2 n = new Vector2(-dir.y, dir.x);
+            Vector2 back = tip - dir * length;
+            int start = vh.currentVertCount;
+            vh.AddVert(Vert(tip, color));
+            vh.AddVert(Vert(back + n * halfWidth, color));
+            vh.AddVert(Vert(back - n * halfWidth, color));
+            vh.AddTriangle(start, start + 1, start + 2);
+            vh.AddTriangle(start, start + 2, start + 1);
+        }
+
         public static UIVertex Vert(Vector2 p, Color c)
         {
             UIVertex v = UIVertex.simpleVert;

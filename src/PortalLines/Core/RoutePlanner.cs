@@ -43,13 +43,42 @@ namespace PortalLines.Core
 
         private static Vector3 _lastStart;
         private static int _lastSnapshot = -1;
+        private static bool _wasAway;
 
         public static void Set(Vector3 destination)
         {
             Active = true;
             Destination = destination;
             _lastSnapshot = -1;
+            _wasAway = false;
             Version++;
+        }
+
+        /// <summary>
+        /// True, and the route cleared, when the player has come within <paramref name="radius"/>
+        /// of the destination after having been farther away, so a destination set next to you
+        /// does not vanish on the spot.
+        /// </summary>
+        public static bool CheckArrival(Vector3 pos, float radius)
+        {
+            if (!Active || radius <= 0f)
+                return false;
+            float d = Utils.DistanceXZ(pos, Destination);
+            if (d > radius * 1.5f)
+                _wasAway = true;
+            if (!_wasAway || d > radius)
+                return false;
+            Clear();
+            return true;
+        }
+
+        /// <summary>The point to head for next: the end of the first walking leg, else the destination.</summary>
+        public static Vector3 NextWaypoint()
+        {
+            Route r = Current;
+            if (r != null && r.Legs.Count > 0 && r.Legs[0].Kind == LegKind.Walk)
+                return r.Legs[0].To;
+            return Destination;
         }
 
         public static void Clear()

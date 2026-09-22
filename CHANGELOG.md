@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0 — minimap navigation
+
+- With a route set, the small minimap draws the walking leg from you to the next portal or the
+  destination, with an arrowhead on the rim when that point is out of view. The line starts at
+  your live position rather than the last recompute point, and hop lines are left off the
+  minimap since they point somewhere you are not walking. The route is now kept current while
+  the large map is closed.
+- The route clears itself once you arrive (after first having been farther away, so a spot set
+  next to you does not vanish at once), with a top-left "Route: arrived" message. An optional
+  hotkey clears it without opening the map.
+- Console: `portallines route <x> <z>`, `portallines route <tag>`, `portallines route clear`.
+- The first-map-open diagnostics line now also reports the small map's rect and mask.
+- Config: `Route.ShowOnMinimap` (on), `ArriveDistance` (20 m, 0 disables), `ClearKey` (unbound).
+
 ## 0.5.0 — route planner
 
 - Shift-click a spot on the large map to plan the fastest way there through the portal network.

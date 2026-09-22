@@ -17,6 +17,13 @@ namespace PortalLines.Core
     {
         private static bool _reported;
 
+        private static string DescribeMask(Mask mask)
+        {
+            var img = mask.GetComponent<Image>();
+            string sprite = img != null && img.sprite != null ? img.sprite.name : "nosprite";
+            return mask.gameObject.name + "/" + sprite;
+        }
+
         public static void Reset()
         {
             _reported = false;
@@ -55,6 +62,23 @@ namespace PortalLines.Core
                       .Append(" pivot=").Append(child.pivot).Append(' ');
                     break;
                 }
+            }
+
+            // The small map: same checks, plus what masks it, since the route arrow assumes a
+            // round visible area and a MaskableGraphic only clips under a Mask or RectMask2D.
+            RectTransform smallImg = map.m_mapImageSmall != null ? map.m_mapImageSmall.rectTransform : null;
+            RectTransform smallRoot = map.m_pinRootSmall;
+            if (smallImg != null)
+                sb.Append("smallImageRect=").Append(smallImg.rect).Append(' ');
+            if (smallRoot != null)
+            {
+                // The small root is inactive while the large map is open; include inactive.
+                Mask mask = smallRoot.GetComponentInParent<Mask>(true);
+                sb.Append("smallPinRootRect=").Append(smallRoot.rect)
+                  .Append(" smallPivot=").Append(smallRoot.pivot)
+                  .Append(" smallMask=").Append(mask != null ? DescribeMask(mask) : "none")
+                  .Append(" smallRectMask=").Append(smallRoot.GetComponentInParent<RectMask2D>(true) != null)
+                  .Append(' ');
             }
 
             sb.Append("textureSize=").Append(map.m_textureSize)

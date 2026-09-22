@@ -14,6 +14,7 @@ namespace PortalLines.UI
         private PortalLinesGraphic _large;
         private PortalLinesGraphic _small;
         private RouteGraphic _route;
+        private RouteGraphic _smallRoute;
 
         public bool Attached => _large != null;
 
@@ -30,16 +31,40 @@ namespace PortalLines.UI
                 Destroy();
                 _map = map;
                 _large = Create(map.m_pinRootLarge, map.m_mapImageLarge, true);
-                _route = CreateRoute(map.m_pinRootLarge, map.m_mapImageLarge);
+                _route = CreateRoute(map.m_pinRootLarge, map.m_mapImageLarge, true);
             }
 
+            bool changed = false;
             bool wantSmall = PluginConfig.ShowOnMinimap.Value;
             if (wantSmall && _small == null)
+            {
                 _small = Create(map.m_pinRootSmall, map.m_mapImageSmall, false);
+                changed = true;
+            }
             else if (!wantSmall && _small != null)
             {
                 Object.Destroy(_small.gameObject);
                 _small = null;
+                changed = true;
+            }
+
+            bool wantSmallRoute = PluginConfig.RouteOnMinimap.Value && PluginConfig.RouteEnabled.Value;
+            if (wantSmallRoute && _smallRoute == null)
+            {
+                _smallRoute = CreateRoute(map.m_pinRootSmall, map.m_mapImageSmall, false);
+                changed = true;
+            }
+            else if (!wantSmallRoute && _smallRoute != null)
+            {
+                Object.Destroy(_smallRoute.gameObject);
+                _smallRoute = null;
+            }
+
+            // Lines beneath the route, both beneath every pin. Vanilla appends pins at the end.
+            if (changed)
+            {
+                if (_small != null) _small.transform.SetAsFirstSibling();
+                if (_smallRoute != null) _smallRoute.transform.SetSiblingIndex(_small != null ? 1 : 0);
             }
         }
 
@@ -54,17 +79,20 @@ namespace PortalLines.UI
             if (_large != null) Object.Destroy(_large.gameObject);
             if (_small != null) Object.Destroy(_small.gameObject);
             if (_route != null) Object.Destroy(_route.gameObject);
+            if (_smallRoute != null) Object.Destroy(_smallRoute.gameObject);
             _large = null;
             _small = null;
             _route = null;
+            _smallRoute = null;
             _map = null;
         }
 
-        private static RouteGraphic CreateRoute(RectTransform root, RawImage image)
+        private static RouteGraphic CreateRoute(RectTransform root, RawImage image, bool large)
         {
             if (root == null || image == null)
                 return null;
-            var go = new GameObject("PortalLines.Route", typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteGraphic));
+            var go = new GameObject(large ? "PortalLines.Route" : "PortalLines.RouteSmall",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteGraphic));
             go.layer = root.gameObject.layer;
             var rt = (RectTransform)go.transform;
             rt.SetParent(root, false);
@@ -77,6 +105,7 @@ namespace PortalLines.UI
             rt.SetSiblingIndex(1); // above the lines, below every pin
             var g = go.GetComponent<RouteGraphic>();
             g.MapImage = image;
+            g.IsLarge = large;
             g.raycastTarget = false;
             g.color = Color.white;
             return g;

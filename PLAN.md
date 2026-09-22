@@ -155,6 +155,35 @@ While the large map is open, nearest known portal to the cursor within ~24 px: h
 line, show a small tooltip: tag, partner tag, straight-line distance, "confirmed / presumed /
 unconnected / conflict (n)". Mouse position → world via `Minimap.ScreenToWorldPoint` (public).
 
+### 2.4b Minimap navigation (v0.6)
+
+Findings from the decompiled `Minimap` that the design rests on:
+
+- In `MapMode.Small`, `Update` calls `CenterMap(player.position)` with no offset every frame, so
+  `m_mapImageSmall.uvRect.center` is the player and the player marker sits at the rect centre.
+  `MapMath.WorldToLocal` with the small image therefore lands on the marker exactly.
+- The small map never rotates; only `m_smallMarker` (player) and `m_windMarker` do. A line from
+  the centre is a compass heading.
+- `SetMapMode` deactivates `m_smallRoot` while the large map is open and on death, so a graphic
+  parented under `m_pinRootSmall` gets no `LateUpdate` then.
+- `UpdatePins` destroys the marker of any pin failing `IsPointVisible`, i.e. outside the uvRect,
+  so pins off the minimap simply vanish. That is why the arrowhead exists.
+- Vanilla appends pin markers at the end of the pin root, so sibling order among our own
+  children (lines at 0, route at 1) is all that needs managing.
+
+Design: a second `RouteGraphic` (`IsLarge = false`) under `m_pinRootSmall`. It draws only the
+walking legs, the first from the live player position (the route recomputes every 5 m, which
+would visibly lag the marker), portal discs and the destination ring. Hop lines are omitted on
+the minimap because they point at the far partner, not where you walk. The first leg is cut at a
+circle inscribed in the rect and finished with an arrowhead when the next waypoint is outside
+it; the circle rather than the rect is an assumption that the visible minimap is round. The
+diagnostics line reports `smallMask` (a `Mask` and its sprite) and `smallRectMask` to confirm.
+
+`RouteState.Update` now runs from `RouteInput.Update` whenever the player exists, not only
+while the large map is open. `RouteState.CheckArrival` clears the route within
+`ArriveDistance` of the destination, but only after the player has once been beyond 1.5× that
+distance, so a destination set beside the player does not clear at once.
+
 ### 2.5 Config
 
 `Lines` (enabled, width, alpha, colour mode, show presumed, show on minimap),
@@ -194,6 +223,7 @@ unconnected / conflict (n)". Mouse position → world via `Minimap.ScreenToWorld
 | 0.3 | Hover highlight and tooltip, small-map option, colour polish, README/screenshots, Thunderstore release. |
 | 0.4 | Biome gradient line colouring (default). |
 | 0.5 | Route planner (shift-click). |
+| 0.6 | Minimap navigation: route leg and rim arrow on the small map, auto-clear on arrival, clear hotkey, `portallines route`. |
 | later | Tag-in-use warning; cleanup list; optional server component for full-world knowledge on dedicated servers. |
 
 ---

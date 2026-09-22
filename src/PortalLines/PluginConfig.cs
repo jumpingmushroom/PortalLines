@@ -51,6 +51,9 @@ namespace PortalLines
         public static ConfigEntry<float> HopCost;
         public static ConfigEntry<bool> RoutePresumed;
         public static ConfigEntry<Color> RouteColor;
+        public static ConfigEntry<bool> RouteOnMinimap;
+        public static ConfigEntry<float> ArriveDistance;
+        public static ConfigEntry<KeyboardShortcut> ClearRouteKey;
 
         public static ConfigEntry<bool> PinsEnabled;
         public static ConfigEntry<bool> ShowTags;
@@ -164,6 +167,22 @@ namespace PortalLines
             RouteColor = cfg.Bind("Route", "Color", new Color(1f, 1f, 1f),
                 new ConfigDescription("Colour of the walking legs and markers.", null, Attr(50)));
 
+            RouteOnMinimap = cfg.Bind("Route", "ShowOnMinimap", true,
+                new ConfigDescription(
+                    "Follow the route on the small minimap: the walking leg from you to the next " +
+                    "portal or the destination, with an arrow at the edge when it is out of view.",
+                    null, Attr(49)));
+
+            ArriveDistance = cfg.Bind("Route", "ArriveDistance", 20f,
+                new ConfigDescription(
+                    "Clear the route by itself once you are this close to the destination (metres). " +
+                    "0 keeps it until you clear it.",
+                    new AcceptableValueRange<float>(0f, 100f), Attr(48)));
+
+            ClearRouteKey = cfg.Bind("Route", "ClearKey", KeyboardShortcut.Empty,
+                new ConfigDescription("Hotkey that clears the route without opening the map. Unbound by default.",
+                    null, Attr(47)));
+
             PinsEnabled = cfg.Bind("Pins", "Enabled", true,
                 new ConfigDescription(
                     "Add a portal pin at every known portal. These pins are never saved and never " +
@@ -235,6 +254,7 @@ namespace PortalLines
             ShowPresumed.SettingChanged += (s, e) => Raise(StyleChanged);
             Outline.SettingChanged += (s, e) => Raise(StyleChanged);
             ShowOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
+            RouteOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
 
             RememberedAlpha.SettingChanged += (s, e) => Raise(StyleChanged);
             FocusDim.SettingChanged += (s, e) => Raise(StyleChanged);

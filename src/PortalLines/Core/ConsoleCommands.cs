@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using PortalLines.Model;
 using UnityEngine;
 
@@ -20,7 +22,7 @@ namespace PortalLines.Core
             _registered = true;
 
             new Terminal.ConsoleCommand("portallines",
-                "PortalLines diagnostics: list | links | refresh | requests | forget",
+                "PortalLines diagnostics: list | links | refresh | requests | forget | route",
                 delegate (Terminal.ConsoleEventArgs args)
                 {
                     string sub = args.Length > 1 ? args[1].ToLowerInvariant() : "help";
@@ -37,15 +39,47 @@ namespace PortalLines.Core
                         case "requests":
                             Say(args.Context, "PortalLines: " + PortalRegistry.RequestsSent + " ZDO request(s) sent this world.");
                             break;
+                        case "route": RouteCmd(args); break;
                         default:
                             Say(args.Context, "portallines list     - every known portal: tag, position, partner, state");
                             Say(args.Context, "portallines links    - every drawn line and whether it is confirmed");
                             Say(args.Context, "portallines refresh  - rescan now and ask the server for stale copies");
                             Say(args.Context, "portallines requests - how many ZDO requests have been sent");
                             Say(args.Context, "portallines forget   - clear this world's remembered portals from disk");
+                            Say(args.Context, "portallines route <x> <z> | <tag> | clear - plan a route to a spot or a portal");
                             break;
                     }
                 });
+        }
+
+        /// <summary>Set or clear the route without the map: coordinates, or a portal's tag.</summary>
+        private static void RouteCmd(Terminal.ConsoleEventArgs args)
+        {
+            Terminal ctx = args.Context;
+            if (args.Length < 3 || args[2].ToLowerInvariant() == "clear")
+            {
+                RouteState.Clear();
+                Say(ctx, "PortalLines: route cleared.");
+                return;
+            }
+            float x, z;
+            if (args.Length >= 4 && float.TryParse(args[2], NumberStyles.Float, CultureInfo.InvariantCulture, out x)
+                && float.TryParse(args[3], NumberStyles.Float, CultureInfo.InvariantCulture, out z))
+            {
+                RouteState.Set(new Vector3(x, 0f, z));
+                Say(ctx, "PortalLines: route to " + x.ToString("0") + ", " + z.ToString("0") + ".");
+                return;
+            }
+            string tag = string.Join(" ", args.Args, 2, args.Length - 2);
+            foreach (PortalEntry e in PortalRegistry.Snapshot.Portals)
+            {
+                if (!string.Equals(e.Tag, tag, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                RouteState.Set(e.Pos);
+                Say(ctx, "PortalLines: route to portal '" + e.Tag + "'.");
+                return;
+            }
+            Say(ctx, "PortalLines: no portal tagged '" + tag + "'. Use: portallines route <x> <z> | <tag> | clear");
         }
 
         /// <summary>Console output also goes to the BepInEx log, so it can be read back from a file.</summary>
