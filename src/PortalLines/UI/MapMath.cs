@@ -93,8 +93,9 @@ namespace PortalLines.UI
                 return new Color(0.82f, 0.82f, 0.82f);
 
             // Golden-ratio hue stepping over the hash gives neighbours in hash space distinct hues.
+            // In double: a float has no fractional bits left above 2^24, so % 1 would be 0.
             uint h = (uint)tag.GetStableHashCode();
-            float hue = (h * 0.6180339887f) % 1f;
+            float hue = (float)((h * 0.6180339887498949) % 1.0);
             return Color.HSVToRGB(hue, 0.72f, 1f);
         }
     }

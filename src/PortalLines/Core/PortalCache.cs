@@ -190,49 +190,89 @@ namespace PortalLines.Core
             if (days > 0)
                 cutoff = Now() - days * 86400L;
 
-            int dropped = 0;
+            string[] lines;
             try
             {
-                foreach (string raw in File.ReadAllLines(_path))
-                {
-                    if (raw.Length == 0 || raw[0] == '#')
-                        continue;
-                    string[] f = raw.Split('\t');
-                    if (f.Length < 6)
-                        continue;
-
-                    var e = new Entry
-                    {
-                        Pos = new Vector3(F(f[0]), F(f[1]), F(f[2])),
-                        Tag = Unescape(f[3]),
-                        Prefab = f[4],
-                        LastSeen = long.Parse(f[5], CultureInfo.InvariantCulture),
-                    };
-                    if (f.Length >= 8 && f[6].Length > 0)
-                    {
-                        e.HasPartnerPos = true;
-                        e.PartnerPos = new Vector3(F(f[6]), 0f, F(f[7]));
-                    }
-                    e.Key = PortalEntry.MakeKey(e.Pos);
-
-                    if (cutoff > 0 && e.LastSeen < cutoff)
-                    {
-                        dropped++;
-                        _dirty = true;
-                        continue;
-                    }
-                    _entries[e.Key] = e;
-                }
+                lines = File.ReadAllLines(_path);
             }
             catch (Exception ex)
             {
                 PortalLinesPlugin.Log.LogWarning("could not read portal cache " + _path + ": " + ex.Message);
-                _entries.Clear();
                 return;
+            }
+
+            // Row by row: one damaged line must not cost every other remembered portal, which
+            // the next save would otherwise make permanent.
+            int dropped = 0, bad = 0;
+            foreach (string raw in lines)
+            {
+                if (raw.Length == 0 || raw[0] == '#')
+                    continue;
+                Entry e = ParseRow(raw);
+                if (e == null)
+                {
+                    bad++;
+                    continue;
+                }
+
+                if (cutoff > 0 && e.LastSeen < cutoff)
+                {
+                    dropped++;
+                    _dirty = true;
+                    continue;
+                }
+                _entries[e.Key] = e;
+            }
+
+            if (bad > 0)
+            {
+                // Keep the original beside the rewritten file, in case the damage is ours.
+                string backup = _path + ".bad";
+                try
+                {
+                    File.Copy(_path, backup, true);
+                }
+                catch (Exception ex)
+                {
+                    PortalLinesPlugin.Log.LogWarning("could not back up portal cache: " + ex.Message);
+                }
+                PortalLinesPlugin.Log.LogWarning(string.Format("skipped {0} unreadable line(s) in {1}; original kept as {2}",
+                    bad, Path.GetFileName(_path), Path.GetFileName(backup)));
+                _dirty = true;
             }
 
             PortalLinesPlugin.Log.LogInfo(string.Format("loaded {0} remembered portal(s) from {1}{2}",
                 _entries.Count, Path.GetFileName(_path), dropped > 0 ? ", forgot " + dropped + " not seen for " + days + " days" : ""));
+        }
+
+        /// <summary>One cache line, or null when it cannot be read.</summary>
+        private static Entry ParseRow(string raw)
+        {
+            string[] f = raw.Split('\t');
+            if (f.Length < 6)
+                return null;
+
+            try
+            {
+                var e = new Entry
+                {
+                    Pos = new Vector3(F(f[0]), F(f[1]), F(f[2])),
+                    Tag = Unescape(f[3]),
+                    Prefab = f[4],
+                    LastSeen = long.Parse(f[5], CultureInfo.InvariantCulture),
+                };
+                if (f.Length >= 8 && f[6].Length > 0)
+                {
+                    e.HasPartnerPos = true;
+                    e.PartnerPos = new Vector3(F(f[6]), 0f, F(f[7]));
+                }
+                e.Key = PortalEntry.MakeKey(e.Pos);
+                return e;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private static void Save()

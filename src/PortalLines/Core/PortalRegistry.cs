@@ -171,10 +171,12 @@ namespace PortalLines.Core
             // 3. Links the game has written. Mutual means confirmed. One-sided means one copy is
             // stale (a retag or a re-pair we have not been sent yet); draw it as presumed and let
             // the refresh sort it out, unless the other end already has a confirmed partner.
+            // Mutual pairs go first, in their own pass: otherwise a stale one-sided claim met
+            // earlier in the list could take a portal whose real, confirmed partner comes later.
             for (int i = 0; i < next.Portals.Count; i++)
             {
                 PortalEntry e = next.Portals[i];
-                if (e.Remembered || e.Linked || e.PartnerId.IsNone())
+                if (e.Remembered || e.PartnerId.IsNone())
                     continue;
 
                 PortalEntry p;
@@ -187,13 +189,22 @@ namespace PortalLines.Core
                 }
 
                 e.PartnerLoaded = true;
-                bool mutual = p.PartnerId == e.Id;
-                if (!mutual && p.Linked)
+                if (!e.Linked && !p.Linked && p.PartnerId == e.Id)
+                    AddLink(next, e, p, LinkKind.Confirmed, "");
+            }
+            for (int i = 0; i < next.Portals.Count; i++)
+            {
+                PortalEntry e = next.Portals[i];
+                if (e.Remembered || e.Linked || !e.PartnerLoaded)
                     continue;
-                if (!mutual && !e.InActiveArea)
+
+                PortalEntry p = byId[e.PartnerId];
+                if (p.Linked)
+                    continue;
+                if (!e.InActiveArea)
                     Request(e.Id); // our copy is the stale one; ask for it
 
-                AddLink(next, e, p, mutual ? LinkKind.Confirmed : LinkKind.Presumed, mutual ? "" : "one end's copy is stale, refreshing");
+                AddLink(next, e, p, LinkKind.Presumed, "one end's copy is stale, refreshing");
             }
 
             // 4. Remembered partner positions: where a confirmed link was last seen. Still only a
@@ -210,11 +221,13 @@ namespace PortalLines.Core
             }
 
             // 5. Exactly two known portals with a tag and no link between them yet. The server
-            // pairs same-tag portals within five seconds, so this is what it will do.
+            // pairs same-tag portals within five seconds, so this is what it will do — unless
+            // either one's ZDO already names a partner, pending or not: that is the real link.
             foreach (KeyValuePair<string, List<PortalEntry>> kv in _byTag)
             {
                 List<PortalEntry> list = kv.Value;
-                if (list.Count != 2 || list[0].Linked || list[1].Linked)
+                if (list.Count != 2 || list[0].Linked || list[1].Linked
+                    || !list[0].PartnerId.IsNone() || !list[1].PartnerId.IsNone())
                     continue;
                 AddLink(next, list[0], list[1], LinkKind.Presumed, "only two portals with this tag");
             }

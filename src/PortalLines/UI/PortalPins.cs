@@ -32,6 +32,11 @@ namespace PortalLines.UI
 
         public void Clear()
         {
+            // The map can outlive us (death, a world rescan): take our pins with us, or they
+            // stay on it untinted and unowned. A destroyed map took them already.
+            if (_map != null)
+                foreach (KeyValuePair<string, Minimap.PinData> kv in _pins)
+                    _map.RemovePin(kv.Value);
             _pins.Clear();
             s_owned.Clear();
             _map = null;

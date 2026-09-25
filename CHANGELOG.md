@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0 — fixes
+
+- Dying no longer leaves a second, untinted set of portal pins on the map each time, and the
+  planned route now survives death. Only leaving the world resets the mod.
+- `ColorMode = PerTag` gives each tag its own colour again; every line had come out red.
+- A stale one-sided link can no longer take a portal whose confirmed partner is listed later,
+  which drew two lines from one portal and could send the route planner through the wrong one.
+- Two portals sharing a tag are no longer presumed linked when either one's ZDO already names
+  a different partner that has not arrived yet.
+- One unreadable line in the remembered-portal cache is skipped instead of discarding the whole
+  file; the original is kept beside it as `.tsv.bad`.
+
 ## 0.7.0 — HUD route arrow
 
 - With a route set, an arrow at the top centre of the screen points the way to the next portal

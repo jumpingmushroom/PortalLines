@@ -15,7 +15,7 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.7.0";
+        public const string PluginVersion = "0.8.0";
 
         /// <summary>Never toggle while the player is typing.</summary>
         internal static bool InputBlocked()
@@ -47,6 +47,7 @@ namespace PortalLines
         private bool _wasLarge;
         private Player _lastPlayer;
         private bool _hadPlayer;
+        private bool _hadWorld;
 
         private void Awake()
         {
@@ -92,7 +93,7 @@ namespace PortalLines
         }
 
         /// <summary>Logged out or returned to the menu: forget the world.</summary>
-        private void LocalPlayerGone()
+        private void WorldGone()
         {
             _overlay.Destroy();
             _toggle.Destroy();
@@ -125,12 +126,18 @@ namespace PortalLines
             // method nulls m_localPlayer inside its own body, so a postfix comparing against it
             // never matches. Unity's == treats a destroyed object as null, so track presence as a
             // bool and identity with ReferenceEquals.
+            //
+            // The player alone is not the world: dying destroys the local player too, while the
+            // minimap, the pins on it and the planned route all carry on. Only ZNet going away
+            // means the world has.
+            bool hasWorld = ZNet.instance != null;
+            if (!hasWorld && _hadWorld)
+                WorldGone();
+            _hadWorld = hasWorld;
+
             bool hasPlayer = player != null;
             bool sameInstance = ReferenceEquals(player, _lastPlayer);
-
-            if (!hasPlayer && _hadPlayer)
-                LocalPlayerGone();
-            else if (hasPlayer && (!_hadPlayer || !sameInstance))
+            if (hasPlayer && (!_hadPlayer || !sameInstance))
                 LocalPlayerArrived();
 
             _hadPlayer = hasPlayer;
