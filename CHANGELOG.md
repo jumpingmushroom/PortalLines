@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.0 — HUD route arrow
+
+- With a route set, an arrow at the top centre of the screen points the way to the next portal
+  or the destination, relative to where the camera looks: straight up means run where you are
+  looking. It brightens when you are within 15° of the heading. Underneath, the target and its
+  live distance: `Portal "Swamp" 240 m`, then `Destination 1.2 km` on the last leg.
+- Within 4 m of the portal to take, the arrow gives way to `Enter portal "Swamp" → Swamp`, with
+  the destination biome in its line colour.
+- It drops below the raid event bar or a boss health bar while one is showing, hides with the
+  rest of the HUD (Ctrl+F3, death, cutscenes), and while the large map or inventory is open.
+- Config: `Route.ShowHudArrow` (on), `HudArrowOffsetY` (0), `HudArrowScale` (1).
+
 ## 0.6.0 — minimap navigation
 
 - With a route set, the small minimap draws the walking leg from you to the next portal or the

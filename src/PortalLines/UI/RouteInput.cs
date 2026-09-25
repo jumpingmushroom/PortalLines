@@ -135,7 +135,7 @@ namespace PortalLines.UI
             return sb.ToString();
         }
 
-        private static string BiomeName(Vector3 pos)
+        internal static string BiomeName(Vector3 pos)
         {
             WorldGenerator wg = WorldGenerator.instance;
             if (wg == null) return "?";
@@ -143,7 +143,7 @@ namespace PortalLines.UI
             catch (System.Exception) { return "?"; }
         }
 
-        private static string Dist(float m)
+        internal static string Dist(float m)
         {
             return m < 1000f ? Mathf.RoundToInt(m) + " m" : (m / 1000f).ToString("0.0") + " km";
         }

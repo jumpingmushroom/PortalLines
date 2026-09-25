@@ -184,6 +184,37 @@ while the large map is open. `RouteState.CheckArrival` clears the route within
 `ArriveDistance` of the destination, but only after the player has once been beyond 1.5× that
 distance, so a destination set beside the player does not clear at once.
 
+### 2.4c HUD route arrow (v0.7)
+
+Findings from the decompiled `Hud` and `EnemyHud` the design rests on:
+
+- `Hud.SetVisible(false)` (Ctrl+F3, and the game's own hiding) moves `m_rootObject` to
+  `s_notVisiblePosition` rather than deactivating it; `Hud.IsVisible()` is
+  `localPosition.x < 1000`. A child of `m_rootObject` hides with the HUD and keeps updating.
+- The top centre is shared. `Hud.m_eventBar` (raid name and bar) is active only while an event
+  runs *and* no boss HUD shows (`Hud.UpdateEvent`). Boss HUDs are instances of
+  `EnemyHud.m_baseHudBoss` in the private `EnemyHud.m_huds` (reachable through the publicizer);
+  unlike ordinary enemy HUDs they are never moved to the creature's screen position, so they
+  stay where the prefab puts them. Their `Health` child and `m_name` bound what is visible.
+- `EnemyHud` may sit on another canvas, so obstacle rects go world → screen → our parent's
+  local space, each with its own canvas camera (null for overlay).
+
+Design (`UI/HudArrow`): a root anchored top centre under `m_rootObject`, holding an
+`ArrowGraphic` (outlined dart, rotated by transform rather than rebuilt) and a label cloned from
+the map's biome label, as `MapPanel` does. Each frame, from `Plugin.Update` after
+`RouteInput.Update`:
+
+- Heading is `Vector3.SignedAngle` on the ground plane from `GameCamera.instance` forward to
+  `RouteState.NextWaypoint()`; the arrow rotates by its negation (UI z is anticlockwise). Full
+  alpha within 15°, half otherwise.
+- The distance is live from the player, not from the route, which recomputes only every 5 m. The
+  label is rebuilt only when what it would print changes.
+- If the first leg is a hop, or the next leg is and the portal is within 4 m, the arrow hides
+  and the label reads "Enter portal <tag> → <biome>". After the teleport the route recomputes
+  from the far side and the arrow returns.
+- Hidden when the large map or inventory is open. Placed at `TopMargin + HudArrowOffsetY` below
+  the top, and 10 px below any event or boss rect that overlaps its width in the upper half.
+
 ### 2.5 Config
 
 `Lines` (enabled, width, alpha, colour mode, show presumed, show on minimap),
@@ -224,6 +255,7 @@ distance, so a destination set beside the player does not clear at once.
 | 0.4 | Biome gradient line colouring (default). |
 | 0.5 | Route planner (shift-click). |
 | 0.6 | Minimap navigation: route leg and rim arrow on the small map, auto-clear on arrival, clear hotkey, `portallines route`. |
+| 0.7 | HUD route arrow: camera-relative heading, target and distance, "Enter portal" prompt, clears raid and boss bars. |
 | later | Tag-in-use warning; cleanup list; optional server component for full-world knowledge on dedicated servers. |
 
 ---

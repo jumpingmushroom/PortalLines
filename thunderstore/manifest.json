@@ -1,6 +1,6 @@
 {
   "name": "PortalLines",
-  "version_number": "0.6.0",
+  "version_number": "0.7.0",
   "website_url": "https://github.com/jumpingmushroom/PortalLines",
   "description": "Portal network on the map: every portal you know, a line to its partner, and a shift-click route planner that finds the fastest way anywhere through your portals.",
   "dependencies": [

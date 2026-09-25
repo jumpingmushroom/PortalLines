@@ -54,6 +54,9 @@ namespace PortalLines
         public static ConfigEntry<bool> RouteOnMinimap;
         public static ConfigEntry<float> ArriveDistance;
         public static ConfigEntry<KeyboardShortcut> ClearRouteKey;
+        public static ConfigEntry<bool> ShowHudArrow;
+        public static ConfigEntry<float> HudArrowOffsetY;
+        public static ConfigEntry<float> HudArrowScale;
 
         public static ConfigEntry<bool> PinsEnabled;
         public static ConfigEntry<bool> ShowTags;
@@ -182,6 +185,23 @@ namespace PortalLines
             ClearRouteKey = cfg.Bind("Route", "ClearKey", KeyboardShortcut.Empty,
                 new ConfigDescription("Hotkey that clears the route without opening the map. Unbound by default.",
                     null, Attr(47)));
+
+            ShowHudArrow = cfg.Bind("Route", "ShowHudArrow", true,
+                new ConfigDescription(
+                    "An arrow at the top of the screen pointing the way to the next portal or the " +
+                    "destination, relative to where you are looking, with the distance underneath. " +
+                    "Beside the portal to take it says which one to enter.",
+                    null, Attr(46)));
+
+            HudArrowOffsetY = cfg.Bind("Route", "HudArrowOffsetY", 0f,
+                new ConfigDescription(
+                    "Move the HUD arrow down (positive) or up (negative) from its place at the top " +
+                    "centre, e.g. to clear a compass mod. It already drops below raid and boss bars.",
+                    new AcceptableValueRange<float>(-100f, 600f), Attr(45)));
+
+            HudArrowScale = cfg.Bind("Route", "HudArrowScale", 1f,
+                new ConfigDescription("Size of the HUD arrow and its label.",
+                    new AcceptableValueRange<float>(0.5f, 2.5f), Attr(44)));
 
             PinsEnabled = cfg.Bind("Pins", "Enabled", true,
                 new ConfigDescription(

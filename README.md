@@ -55,6 +55,12 @@ they point somewhere you are not walking. The route clears itself when you arriv
 by default), or with an optional hotkey. `portallines route <x> <z>`, `portallines route <tag>`
 and `portallines route clear` do the same from the console.
 
+**HUD arrow.** With a route set, an arrow at the top of the screen points the way to the next
+portal or the destination, relative to where you are looking, and brightens when you are on
+course. Underneath: the portal's tag or "Destination", and how far. Beside the portal to take it
+says which one to enter and where it leads. It moves below raid and boss bars, and can be moved,
+scaled or turned off in the `Route` config.
+
 **The map**, whenever it is open:
 
 - **Lines** between each pair of connected portals, each end coloured by its biome and blended

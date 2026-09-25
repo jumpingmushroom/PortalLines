@@ -7,7 +7,9 @@ through them.
 **Shift-click a spot on the map.** The mod works out where to walk, which portal to take and where
 you come out, draws the route, and tells you what it saves: *613 m on foot instead of 3.5 km*.
 Close the map and the **minimap follows the route**: the leg to walk next, and an arrow on the
-rim pointing at it when it is out of view. The route clears itself when you arrive.
+rim pointing at it when it is out of view. An **arrow at the top of the screen** points the way
+relative to where you are looking, with the distance underneath, and tells you which portal to
+enter when you reach it. The route clears itself when you arrive.
 
 ![Route](https://raw.githubusercontent.com/jumpingmushroom/PortalLines/v0.5.0/docs/images/route.jpg)
 
