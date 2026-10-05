@@ -34,13 +34,8 @@ namespace PortalLines.UI
             bg.color = new Color(0.05f, 0.04f, 0.03f, 0.82f);
             bg.raycastTarget = false;
 
-            GameObject textGo = Object.Instantiate(map.m_biomeNameLarge.gameObject, _panel);
-            textGo.name = "Text";
-            foreach (Component c in textGo.GetComponents<Component>())
-                if (c != null && c.GetType().Name == "Localize")
-                    Object.Destroy(c);
-            _text = textGo.GetComponent<TMP_Text>();
-            var trt = textGo.transform as RectTransform;
+            _text = CloneLabel(map, _panel);
+            var trt = _text.rectTransform;
             trt.anchorMin = Vector2.zero;
             trt.anchorMax = Vector2.one;
             trt.pivot = new Vector2(0f, 1f);
@@ -48,14 +43,29 @@ namespace PortalLines.UI
             trt.offsetMax = new Vector2(-10f, -7f);
             _text.alignment = TextAlignmentOptions.TopLeft;
             _text.fontSize = 17f;
-            _text.textWrappingMode = TextWrappingModes.NoWrap;
-            _text.richText = true;
-            _text.color = Color.white;
-            _text.raycastTarget = false;
-            _text.text = "";
 
             go.SetActive(false);
             return true;
+        }
+
+        /// <summary>
+        /// A copy of the map's biome label under <paramref name="parent"/>, for the game's font and
+        /// material: blank, white, rich text, no wrapping, not clickable, and not re-localized.
+        /// </summary>
+        public static TMP_Text CloneLabel(Minimap map, Transform parent)
+        {
+            GameObject textGo = Object.Instantiate(map.m_biomeNameLarge.gameObject, parent);
+            textGo.name = "Text";
+            foreach (Component c in textGo.GetComponents<Component>())
+                if (c != null && c.GetType().Name == "Localize")
+                    Object.Destroy(c);
+            TMP_Text text = textGo.GetComponent<TMP_Text>();
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.richText = true;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            text.text = "";
+            return text;
         }
 
         /// <summary>Show at a screen position, offset from it and flipped to stay inside the map root.</summary>

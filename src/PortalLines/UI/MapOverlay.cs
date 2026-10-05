@@ -16,8 +16,6 @@ namespace PortalLines.UI
         private RouteGraphic _route;
         private RouteGraphic _smallRoute;
 
-        public bool Attached => _large != null;
-
         public void EnsureAttached(Minimap map)
         {
             if (map == null)
@@ -30,15 +28,15 @@ namespace PortalLines.UI
             {
                 Destroy();
                 _map = map;
-                _large = Create(map.m_pinRootLarge, map.m_mapImageLarge, true);
-                _route = CreateRoute(map.m_pinRootLarge, map.m_mapImageLarge, true);
+                _large = Create<PortalLinesGraphic>(map.m_pinRootLarge, map.m_mapImageLarge, true, "PortalLines.Large", 0);
+                _route = Create<RouteGraphic>(map.m_pinRootLarge, map.m_mapImageLarge, true, "PortalLines.Route", 1);
             }
 
             bool changed = false;
             bool wantSmall = PluginConfig.ShowOnMinimap.Value;
             if (wantSmall && _small == null)
             {
-                _small = Create(map.m_pinRootSmall, map.m_mapImageSmall, false);
+                _small = Create<PortalLinesGraphic>(map.m_pinRootSmall, map.m_mapImageSmall, false, "PortalLines.Small", 0);
                 changed = true;
             }
             else if (!wantSmall && _small != null)
@@ -51,7 +49,7 @@ namespace PortalLines.UI
             bool wantSmallRoute = PluginConfig.RouteOnMinimap.Value && PluginConfig.RouteEnabled.Value;
             if (wantSmallRoute && _smallRoute == null)
             {
-                _smallRoute = CreateRoute(map.m_pinRootSmall, map.m_mapImageSmall, false);
+                _smallRoute = Create<RouteGraphic>(map.m_pinRootSmall, map.m_mapImageSmall, false, "PortalLines.RouteSmall", 1);
                 changed = true;
             }
             else if (!wantSmallRoute && _smallRoute != null)
@@ -72,6 +70,8 @@ namespace PortalLines.UI
         {
             if (_large != null) _large.MarkStyleDirty();
             if (_small != null) _small.MarkStyleDirty();
+            if (_route != null) _route.MarkStyleDirty();
+            if (_smallRoute != null) _smallRoute.MarkStyleDirty();
         }
 
         public void Destroy()
@@ -87,37 +87,17 @@ namespace PortalLines.UI
             _map = null;
         }
 
-        private static RouteGraphic CreateRoute(RectTransform root, RawImage image, bool large)
-        {
-            if (root == null || image == null)
-                return null;
-            var go = new GameObject(large ? "PortalLines.Route" : "PortalLines.RouteSmall",
-                typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteGraphic));
-            go.layer = root.gameObject.layer;
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(root, false);
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.pivot = Vector2.zero;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-            rt.localScale = Vector3.one;
-            rt.SetSiblingIndex(1); // above the lines, below every pin
-            var g = go.GetComponent<RouteGraphic>();
-            g.MapImage = image;
-            g.IsLarge = large;
-            g.raycastTarget = false;
-            g.color = Color.white;
-            return g;
-        }
-
-        private static PortalLinesGraphic Create(RectTransform root, RawImage image, bool large)
+        /// <summary>
+        /// A graphic filling the pin root, at <paramref name="siblingIndex"/>: 0 for lines, 1 for
+        /// the route above them, both beneath every pin.
+        /// </summary>
+        private static T Create<T>(RectTransform root, RawImage image, bool large, string name, int siblingIndex)
+            where T : MapGraphic
         {
             if (root == null || image == null)
                 return null;
 
-            var go = new GameObject(large ? "PortalLines.Large" : "PortalLines.Small",
-                typeof(RectTransform), typeof(CanvasRenderer), typeof(PortalLinesGraphic));
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(T));
             go.layer = root.gameObject.layer;
 
             var rt = (RectTransform)go.transform;
@@ -128,9 +108,9 @@ namespace PortalLines.UI
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
             rt.localScale = Vector3.one;
-            rt.SetAsFirstSibling(); // beneath every pin
+            rt.SetSiblingIndex(siblingIndex);
 
-            var g = go.GetComponent<PortalLinesGraphic>();
+            var g = go.GetComponent<T>();
             g.MapImage = image;
             g.IsLarge = large;
             g.raycastTarget = false; // never eat map clicks

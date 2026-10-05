@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.1 — fixes
+
+- With lines switched off, the lines a planned route uses no longer drop out of the map a few
+  seconds after the route is set.
+- Changing the route colour, line width or colour mode now restyles the planned route at once,
+  not only after the map is panned.
+- Changing `HopCost` or `UsePresumedLinks` re-plans the current route straight away.
+- Turning `RememberPortals` off mid-session now stops using the cache file immediately.
+- The remembered-portal cache is replaced in a single step when saved, so a crash mid-save can
+  no longer lose it.
+
 ## 0.8.0 — fixes
 
 - Dying no longer leaves a second, untinted set of portal pins on the map each time, and the

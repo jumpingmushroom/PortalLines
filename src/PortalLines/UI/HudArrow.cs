@@ -135,14 +135,9 @@ namespace PortalLines.UI
             art.anchoredPosition = new Vector2(0f, -ArrowSize * 0.5f);
 
             // The map's biome label, like MapPanel, for the game's font and material.
-            GameObject textGo = Object.Instantiate(map.m_biomeNameLarge.gameObject, _root);
-            textGo.name = "Text";
-            foreach (Component c in textGo.GetComponents<Component>())
-                if (c != null && c.GetType().Name == "Localize")
-                    Object.Destroy(c);
-            textGo.SetActive(true);
-            _text = textGo.GetComponent<TMP_Text>();
-            var trt = textGo.transform as RectTransform;
+            _text = MapPanel.CloneLabel(map, _root);
+            _text.gameObject.SetActive(true);
+            var trt = _text.rectTransform;
             trt.anchorMin = new Vector2(0f, 1f);
             trt.anchorMax = new Vector2(1f, 1f);
             trt.pivot = new Vector2(0.5f, 1f);
@@ -150,14 +145,9 @@ namespace PortalLines.UI
             trt.anchoredPosition = new Vector2(0f, -ArrowSize - 2f);
             _text.alignment = TextAlignmentOptions.Top;
             _text.fontSize = 18f;
-            _text.textWrappingMode = TextWrappingModes.NoWrap;
-            _text.richText = true;
-            _text.color = Color.white;
             // Over open sky or snow, not the dark map: outline it (on an instanced material).
             _text.outlineWidth = 0.2f;
             _text.outlineColor = new Color32(0, 0, 0, 200);
-            _text.raycastTarget = false;
-            _text.text = "";
 
             _hud = hud;
             go.SetActive(false);

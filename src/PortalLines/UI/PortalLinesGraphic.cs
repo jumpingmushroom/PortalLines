@@ -10,25 +10,15 @@ namespace PortalLines.UI
     /// frame and clips under whatever mask the map has. Rebuilt only when the view (uvRect, rect)
     /// or the registry snapshot changes; idle while the map is closed because the root is inactive.
     /// </summary>
-    public sealed class PortalLinesGraphic : MaskableGraphic
+    public sealed class PortalLinesGraphic : MapGraphic
     {
         private const float DashLength = 14f;
         private const float GapLength = 9f;
-
-        public RawImage MapImage;
-        public bool IsLarge = true;
 
         private Rect _lastUv;
         private Rect _lastRect;
         private int _lastVersion = -1;
         private int _lastHover = -1;
-        private bool _styleDirty = true;
-
-
-        public void MarkStyleDirty()
-        {
-            _styleDirty = true;
-        }
 
         private void LateUpdate()
         {
@@ -40,13 +30,13 @@ namespace PortalLines.UI
             int version = PortalRegistry.Snapshot.Version;
             int hover = IsLarge ? HoverState.Version + RouteState.Version * 1000 : 0;
 
-            if (_styleDirty || uv != _lastUv || rect != _lastRect || version != _lastVersion || hover != _lastHover)
+            if (StyleDirty || uv != _lastUv || rect != _lastRect || version != _lastVersion || hover != _lastHover)
             {
                 _lastUv = uv;
                 _lastRect = rect;
                 _lastVersion = version;
                 _lastHover = hover;
-                _styleDirty = false;
+                StyleDirty = false;
                 SetVerticesDirty();
             }
         }
@@ -78,8 +68,6 @@ namespace PortalLines.UI
             float alpha = PluginConfig.LineAlpha.Value;
             bool outline = PluginConfig.Outline.Value;
             bool showPresumed = PluginConfig.ShowPresumed.Value;
-            LineColorMode mode = PluginConfig.ColorMode.Value;
-            Color singleColor = PluginConfig.SingleColor.Value;
             float rememberedAlpha = PluginConfig.RememberedAlpha.Value;
 
             // Local space: pivot (0,0) and a rect matching the pin root, so (0,0) is the map's
@@ -107,20 +95,8 @@ namespace PortalLines.UI
 
                 // Two colours, one per end; equal unless in Biome mode. Vertex colours interpolate,
                 // so the gradient is free.
-                Color ca, cb;
-                switch (mode)
-                {
-                    case LineColorMode.Biome:
-                        ca = MapMath.BiomeColor(link.A.Biome);
-                        cb = MapMath.BiomeColor(link.B.Biome);
-                        break;
-                    case LineColorMode.Single:
-                        ca = cb = singleColor;
-                        break;
-                    default:
-                        ca = cb = MapMath.TagColor(link.Tag);
-                        break;
-                }
+                Color ca = MapMath.LineColor(link.A.Biome, link.Tag);
+                Color cb = MapMath.LineColor(link.B.Biome, link.Tag);
 
                 float la = alpha * (dashed ? 0.85f : 1f);
                 if (link.AnyRemembered)
@@ -134,13 +110,10 @@ namespace PortalLines.UI
                         la = Mathf.Max(la, 0.95f);
                         w += 1.5f;
                     }
-                    else if (onRoute)
-                    {
-                        // The route graphic redraws this link brighter; keep the base copy out of the way.
-                        la *= focusDim;
-                    }
                     else
                     {
+                        // Includes links on the route: the route graphic redraws those brighter,
+                        // so the base copy stays out of the way.
                         la *= focusDim;
                     }
                 }
@@ -166,11 +139,22 @@ namespace PortalLines.UI
             }
         }
 
+        /// <summary>
+        /// By portal key, not by reference: a rescan that changes nothing still hands out fresh
+        /// link objects under the same snapshot version, and the route is not recomputed for it.
+        /// </summary>
         private static bool RouteUses(Route route, PortalLink link)
         {
             for (int i = 0; i < route.Legs.Count; i++)
-                if (route.Legs[i].Kind == LegKind.Hop && ReferenceEquals(route.Legs[i].Link, link))
+            {
+                RouteLeg leg = route.Legs[i];
+                if (leg.Kind != LegKind.Hop)
+                    continue;
+                string from = leg.Portal.Key;
+                string to = leg.Link.Other(leg.Portal).Key;
+                if ((link.A.Key == from && link.B.Key == to) || (link.A.Key == to && link.B.Key == from))
                     return true;
+            }
             return false;
         }
     }

@@ -72,6 +72,9 @@ namespace PortalLines
         /// <summary>Raised when something that changes which pins exist is edited.</summary>
         public static event Action PinsChanged;
 
+        /// <summary>Raised when something that changes how routes are planned is edited.</summary>
+        public static event Action RouteChanged;
+
         // ConfigurationManagerAttributes is supplied by Jotunn (global namespace). Config
         // managers match it by type name via reflection, so no dependency on any particular
         // ConfigurationManager build is implied and nothing breaks if none is installed.
@@ -275,10 +278,14 @@ namespace PortalLines
             Outline.SettingChanged += (s, e) => Raise(StyleChanged);
             ShowOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
             RouteOnMinimap.SettingChanged += (s, e) => Raise(StyleChanged);
+            RouteColor.SettingChanged += (s, e) => Raise(StyleChanged);
 
             RememberedAlpha.SettingChanged += (s, e) => Raise(StyleChanged);
             FocusDim.SettingChanged += (s, e) => Raise(StyleChanged);
             MapToggle.SettingChanged += (s, e) => Raise(StyleChanged);
+
+            HopCost.SettingChanged += (s, e) => Raise(RouteChanged);
+            RoutePresumed.SettingChanged += (s, e) => Raise(RouteChanged);
 
             PinsEnabled.SettingChanged += (s, e) => Raise(PinsChanged);
             ShowTags.SettingChanged += (s, e) => Raise(PinsChanged);

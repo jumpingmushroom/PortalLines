@@ -86,6 +86,17 @@ namespace PortalLines.UI
             }
         }
 
+        /// <summary>The colour the current ColorMode gives a line end standing in <paramref name="biome"/>.</summary>
+        public static Color LineColor(Heightmap.Biome biome, string tag)
+        {
+            switch (PluginConfig.ColorMode.Value)
+            {
+                case LineColorMode.Biome: return BiomeColor(biome);
+                case LineColorMode.Single: return PluginConfig.SingleColor.Value;
+                default: return TagColor(tag);
+            }
+        }
+
         /// <summary>A stable, well-separated colour for a tag. Untagged portals get a neutral grey.</summary>
         public static Color TagColor(string tag)
         {

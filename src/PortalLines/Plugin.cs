@@ -15,7 +15,7 @@ namespace PortalLines
     {
         public const string PluginGuid = "com.jumpingmushroom.portallines";
         public const string PluginName = "PortalLines";
-        public const string PluginVersion = "0.8.0";
+        public const string PluginVersion = "0.8.1";
 
         /// <summary>Never toggle while the player is typing.</summary>
         internal static bool InputBlocked()
@@ -61,6 +61,7 @@ namespace PortalLines
 
             PluginConfig.StyleChanged += OnStyleChanged;
             PluginConfig.PinsChanged += OnPinsChanged;
+            PluginConfig.RouteChanged += RouteState.Invalidate;
 
             Logger.LogInfo(PluginName + " " + PluginVersion + " loaded.");
         }
@@ -69,14 +70,8 @@ namespace PortalLines
         {
             PluginConfig.StyleChanged -= OnStyleChanged;
             PluginConfig.PinsChanged -= OnPinsChanged;
-            _overlay.Destroy();
-            _toggle.Destroy();
-            _hover.Destroy();
-            _route.Destroy();
-            _arrow.Destroy();
-            RouteState.Clear();
-            _pins.Clear();
-            PortalCache.Unload();
+            PluginConfig.RouteChanged -= RouteState.Invalidate;
+            WorldGone();
             if (_harmony != null)
                 _harmony.UnpatchSelf();
         }

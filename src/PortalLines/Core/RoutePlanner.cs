@@ -81,6 +81,12 @@ namespace PortalLines.Core
             return Destination;
         }
 
+        /// <summary>A planner setting changed: recompute on the next update even if nothing moved.</summary>
+        public static void Invalidate()
+        {
+            _lastSnapshot = -1;
+        }
+
         public static void Clear()
         {
             if (!Active)

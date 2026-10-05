@@ -14,11 +14,8 @@ namespace PortalLines.UI
     /// first leg is cut at an inscribed circle and finished with an arrowhead when the next
     /// waypoint is out of view.
     /// </summary>
-    public sealed class RouteGraphic : MaskableGraphic
+    public sealed class RouteGraphic : MapGraphic
     {
-        public RawImage MapImage;
-        public bool IsLarge = true;
-
         private Rect _lastUv;
         private Rect _lastRect;
         private int _lastVersion = -1;
@@ -29,8 +26,9 @@ namespace PortalLines.UI
                 return;
             Rect uv = MapImage.uvRect;
             Rect rect = MapImage.rectTransform.rect;
-            if (uv != _lastUv || rect != _lastRect || RouteState.Version != _lastVersion)
+            if (StyleDirty || uv != _lastUv || rect != _lastRect || RouteState.Version != _lastVersion)
             {
+                StyleDirty = false;
                 _lastUv = uv;
                 _lastRect = rect;
                 _lastVersion = RouteState.Version;

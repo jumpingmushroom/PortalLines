@@ -40,14 +40,18 @@ namespace PortalLines.Core
         private static bool _dirty;
 
         public static bool Loaded => _path != null;
-        public static int Count => _entries.Count;
         public static IEnumerable<Entry> Entries => _entries.Values;
 
         /// <summary>Load the cache for the current world once ZNet knows which world that is.</summary>
         public static void EnsureLoaded()
         {
             if (!PluginConfig.RememberPortals.Value)
+            {
+                // Switched off mid-session: stop using the file, keeping what was already learned.
+                if (_path != null)
+                    Unload();
                 return;
+            }
 
             World world = ZNet.World;
             if (world == null)
@@ -86,7 +90,7 @@ namespace PortalLines.Core
             return _entries.TryGetValue(key, out e) ? e : null;
         }
 
-        /// <summary>Record what a live ZDO says. Returns true if anything changed.</summary>
+        /// <summary>Record what a live ZDO says, marking the cache dirty if anything changed.</summary>
         public static void Observe(PortalEntry live, long now)
         {
             if (_path == null)
@@ -301,8 +305,9 @@ namespace PortalLines.Core
                 string tmp = _path + ".tmp";
                 File.WriteAllText(tmp, sb.ToString());
                 if (File.Exists(_path))
-                    File.Delete(_path);
-                File.Move(tmp, _path);
+                    File.Replace(tmp, _path, null);
+                else
+                    File.Move(tmp, _path);
                 _dirty = false;
 
                 if (PluginConfig.Verbose.Value)

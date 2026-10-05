@@ -110,13 +110,7 @@ namespace PortalLines.UI
         private static string Describe(PortalEntry e)
         {
             var sb = new StringBuilder(160);
-            Color c;
-            switch (PluginConfig.ColorMode.Value)
-            {
-                case LineColorMode.Biome: c = MapMath.BiomeColor(e.Biome); break;
-                case LineColorMode.Single: c = PluginConfig.SingleColor.Value; break;
-                default: c = MapMath.TagColor(e.Tag); break;
-            }
+            Color c = MapMath.LineColor(e.Biome, e.Tag);
             sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(c)).Append("><b>")
               .Append(e.HasTag ? e.Tag : "(no tag)").Append("</b></color>");
             if (e.PrefabName.IndexOf("stone", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -128,8 +122,8 @@ namespace PortalLines.UI
                 PortalEntry other = e.Link.Other(e);
                 sb.Append(e.Link.Kind == LinkKind.Confirmed ? "Linked" : "Presumed link")
                   .Append(" → <color=#").Append(ColorUtility.ToHtmlStringRGB(MapMath.BiomeColor(other.Biome))).Append('>')
-                  .Append(BiomeName(other.Pos)).Append("</color>")
-                  .Append(", ").Append(Dist(e.Link.Distance));
+                  .Append(RouteInput.BiomeName(other.Pos)).Append("</color>")
+                  .Append(", ").Append(RouteInput.Dist(e.Link.Distance));
                 if (e.Link.Kind != LinkKind.Confirmed && !string.IsNullOrEmpty(e.Link.Reason))
                     sb.Append("\n<alpha=#99>").Append(e.Link.Reason);
             }
@@ -151,32 +145,12 @@ namespace PortalLines.UI
 
             Player p = Player.m_localPlayer;
             if (p != null)
-                sb.Append("\n<alpha=#99>").Append(Dist(Utils.DistanceXZ(p.transform.position, e.Pos))).Append(" from you");
+                sb.Append("\n<alpha=#99>").Append(RouteInput.Dist(Utils.DistanceXZ(p.transform.position, e.Pos))).Append(" from you");
 
             if (e.Remembered)
                 sb.Append("\n<alpha=#99>Remembered, last seen ").Append(Ago(e.LastSeen));
 
             return sb.ToString();
-        }
-
-        private static string BiomeName(Vector3 pos)
-        {
-            WorldGenerator wg = WorldGenerator.instance;
-            if (wg == null)
-                return "?";
-            try
-            {
-                return wg.GetBiomeSector(pos).GetName();
-            }
-            catch (Exception)
-            {
-                return "?";
-            }
-        }
-
-        private static string Dist(float m)
-        {
-            return m < 1000f ? Mathf.RoundToInt(m) + " m" : (m / 1000f).ToString("0.0") + " km";
         }
 
         private static string Ago(long unix)
