@@ -31,6 +31,6 @@ Client-side only; nothing to install on the server. The mod knows every portal y
 and the far end of each, fetched with the same request the game makes for the portal you are
 standing next to. The hosting player and singleplayer see the whole world.
 
-Console: `portallines list | links | refresh | forget | route <x> <z> | route <tag> | route clear`.
+Console: `portallines list | links | refresh | forget | route <x> <z> | route <tag> | route clear | route show`.
 
 Requires BepInEx and Jotunn. Source and issues: https://github.com/jumpingmushroom/PortalLines

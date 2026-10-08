@@ -46,6 +46,7 @@ namespace PortalLines.Core
                             Say(args.Context, "portallines requests - how many ZDO requests have been sent");
                             Say(args.Context, "portallines forget   - clear this world's remembered portals from disk");
                             Say(args.Context, "portallines route <x> <z> | <tag> | clear - plan a route to a spot or a portal");
+                            Say(args.Context, "portallines route show - the current route, its water and the planner's timings");
                             break;
                     }
                 });
@@ -55,6 +56,18 @@ namespace PortalLines.Core
         private static void RouteCmd(Terminal.ConsoleEventArgs args)
         {
             Terminal ctx = args.Context;
+            if (args.Length >= 3 && args[2].ToLowerInvariant() == "show")
+            {
+                if (!RouteState.Active)
+                    Say(ctx, "PortalLines: no route set.");
+                else
+                    foreach (string line in UI.RouteInput.Describe(RouteState.Current, false).Split('\n'))
+                        Say(ctx, "PortalLines: " + line);
+                Say(ctx, string.Format("PortalLines: route read in {0:0.00} ms; search: {1}",
+                    RouteState.LastComputeMs, RouteState.FieldStatus));
+                Say(ctx, "PortalLines: water map " + WaterMap.Status);
+                return;
+            }
             if (args.Length < 3 || args[2].ToLowerInvariant() == "clear")
             {
                 RouteState.Clear();

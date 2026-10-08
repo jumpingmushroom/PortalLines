@@ -215,6 +215,37 @@ the map's biome label, as `MapPanel` does. Each frame, from `Plugin.Update` afte
 - Hidden when the large map or inventory is open. Placed at `TopMargin + HudArrowOffsetY` below
   the top, and 10 px below any event or boss rect that overlaps its width in the upper half.
 
+### 2.4d Land-aware routing (v0.9)
+
+Straight walking legs could only be compared with each other: a water penalty on them picked the
+least-wet straight line, still wrong when the sensible way is a curved walk round a bay, and it
+invented portal round trips just to approach on a parallel dry line. Walking now follows a grid.
+Design: `docs/superpowers/specs/2026-10-08-land-routing-design.md`.
+
+Findings the design rests on:
+
+- `Minimap.m_heightTexture` (RHalf, `m_textureSize`² texels of `m_pixelSize` m; 2048 × 12 m in
+  1.0.12) holds `WorldGenerator.GetBiomeHeight` for the whole world, filled by `GenerateWorldMap`
+  or loaded from the per-seed cache, then `Apply()`d readable; the game reads it back with
+  `GetPixel` itself. Texel `j` is centred on `(j - size/2) * pixel + pixel/2`, so
+  `floor(x / pixel + size/2)`. Generated terrain only: no terraforming, no bridges.
+- Sea level is `ZoneSystem.m_waterLevel` (30). `Character.m_swimDepth` is 2 and `IsSwimming`
+  allows 0.4 of slack, so ground below 28.4 m is swim water; shallower fords count as land.
+- `Ship.GetLocalShip()` is non-null while the local player is aboard.
+
+`Core/WaterMap` copies the texture into one bit per texel, 64 rows per frame once
+`m_hasGenerated` is set (43 ms over 32 frames on a real world). `Core/LandField` is a Dijkstra
+from the destination over 24 m cells (2×2 texels, water when ≥2 are), 8-connected, a step costing
+its length times the mean of 1 (land) or `WaterPenalty` (water); portal links are reversed
+teleport edges costing `HopCost`. It runs on a thread-pool thread (about 0.25 s for a full world
+on .NET 8, more under Mono) whenever the destination, the snapshot version, the water map or a
+setting changes, and keeps each cell's first step. `RouteState` reads the route off it from the
+player's cell every 5 m, splits it at portals and straightens each walk by string pulling (a
+shortcut may cross at most 12 m more water than the grid path). The 0.8.1 straight-line planner
+answers before the water map exists, on a ship, and at penalty 1. While the first field for a
+destination computes, the route has no legs (the straight answer was often the very line across
+the water being avoided); a newer field for the same destination replaces the old one in place.
+
 ### 2.5 Config
 
 `Lines` (enabled, width, alpha, colour mode, show presumed, show on minimap),
@@ -256,6 +287,7 @@ the map's biome label, as `MapPanel` does. Each frame, from `Plugin.Update` afte
 | 0.5 | Route planner (shift-click). |
 | 0.6 | Minimap navigation: route leg and rim arrow on the small map, auto-clear on arrival, clear hotkey, `portallines route`. |
 | 0.7 | HUD route arrow: camera-relative heading, target and distance, "Enter portal" prompt, clears raid and boss bars. |
+| 0.9 | Land-aware routing: walking legs follow land round water (`WaterPenalty`); straight on a ship. |
 | later | Tag-in-use warning; cleanup list; optional server component for full-world knowledge on dedicated servers. |
 
 ---

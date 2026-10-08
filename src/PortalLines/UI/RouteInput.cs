@@ -83,7 +83,7 @@ namespace PortalLines.UI
             if (RouteState.Version != _lastVersion)
             {
                 _lastVersion = RouteState.Version;
-                _lastText = Describe(RouteState.Current);
+                _lastText = Describe(RouteState.Current, true);
             }
 
             // Beside the destination ring, in the map root's local space.
@@ -100,20 +100,26 @@ namespace PortalLines.UI
             _lastVersion = -1;
         }
 
-        private static string Describe(Route route)
+        /// <summary>The route panel text; without rich text for the console.</summary>
+        internal static string Describe(Route route, bool rich)
         {
             var sb = new StringBuilder(160);
-            sb.Append("<b>Route</b>  <alpha=#99>shift-right-click clears\n");
-            if (route == null)
-                return sb.Append("computing…").ToString();
+            sb.Append("<b>Route</b>  <alpha=#99>")
+              .Append(route != null && route.Planning ? "planning…" : "shift-right-click clears").Append('\n');
+            if (route == null || (route.Planning && route.Legs.Count == 0))
+                return Plain(sb.Append("<alpha=#99>finding a way round the water…").ToString(), rich);
 
             if (!route.UsesPortals)
             {
-                sb.Append("Walk ").Append(Dist(route.Direct)).Append("\n<alpha=#99>no portal saves any walking");
-                return sb.ToString();
+                sb.Append("Walk ").Append(Dist(route.Walking));
+                AppendWater(sb, route);
+                sb.Append("\n<alpha=#99>no portal saves any walking");
+                return Plain(sb.ToString(), rich);
             }
 
-            sb.Append("Walk ").Append(Dist(route.Walking)).Append(", ")
+            sb.Append("Walk ").Append(Dist(route.Walking));
+            AppendWater(sb, route);
+            sb.Append(", ")
               .Append(route.Hops).Append(route.Hops == 1 ? " portal hop" : " portal hops")
               .Append("  <alpha=#99>(").Append(Dist(route.Direct)).Append(" direct)");
 
@@ -132,7 +138,18 @@ namespace PortalLines.UI
                 if (leg.Link.Kind != Model.LinkKind.Confirmed)
                     sb.Append("  <alpha=#99>presumed");
             }
-            return sb.ToString();
+            return Plain(sb.ToString(), rich);
+        }
+
+        private static void AppendWater(StringBuilder sb, Route route)
+        {
+            if (route.Water >= 5f)
+                sb.Append(" (").Append(Dist(route.Water)).Append(" water)");
+        }
+
+        private static string Plain(string s, bool rich)
+        {
+            return rich ? s : System.Text.RegularExpressions.Regex.Replace(s, "<[^>]*>", "");
         }
 
         internal static string BiomeName(Vector3 pos)

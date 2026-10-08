@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 — routes that walk round water
+
+- Walking parts of a route now follow land: they bend round fjords, bays and the sea instead of
+  running straight across, and the planner picks portals with that in mind. Swimming is still
+  allowed when going round is far longer; each metre of it counts as `WaterPenalty` metres of
+  walking (default 5, 1 goes back to straight lines). Shallow fords count as land. The terrain
+  comes from the minimap's own height data, so terraforming and bridges are not seen.
+- The map, minimap and HUD arrow follow the bends; the arrow's distance is along the path to the
+  next portal or the destination.
+- The search runs in the background, so a new destination shows only its marker and "planning…"
+  for a moment (about half a second) before the route appears.
+- On a ship, routes are straight lines again: water costs nothing at sea.
+- The route panel shows how much of the walk is water, e.g. `Walk 2.9 km (40 m water)`.
+- `portallines route show` prints the current route, its water, and the planner's timings.
+
 ## 0.8.1 — fixes
 
 - With lines switched off, the lines a planned route uses no longer drop out of the map a few

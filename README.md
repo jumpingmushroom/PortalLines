@@ -48,12 +48,20 @@ beside the destination gives the total on foot, the hops in order with their des
 and the direct distance for comparison. The route follows you as you move. Shift-right-click
 clears it.
 
+Walking legs follow land: they bend round fjords, bays and the sea, and the planner picks portals
+with that in mind. It still swims when going round is far longer, since each metre of deep water
+costs five metres of walking by default (`WaterPenalty`); the panel then says how much of the walk
+is water. Shallow fords count as land. The route appears about half a second after you set the
+destination, while the search runs in the background. On a ship the route is a straight line
+again.
+
 **Minimap navigation.** With a route set, the small minimap shows the walking leg from you to
 the next portal or to the destination, and an arrow on its rim when that point is out of view.
 The minimap never rotates, so the arrow is a compass heading. Hop lines are left off the minimap:
 they point somewhere you are not walking. The route clears itself when you arrive (within 20 m
 by default), or with an optional hotkey. `portallines route <x> <z>`, `portallines route <tag>`
-and `portallines route clear` do the same from the console.
+and `portallines route clear` do the same from the console; `portallines route show` prints the
+current route.
 
 **HUD arrow.** With a route set, an arrow at the top of the screen points the way to the next
 portal or the destination, relative to where you are looking, and brightens when you are on

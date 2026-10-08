@@ -49,6 +49,7 @@ namespace PortalLines
         public static ConfigEntry<float> FocusDim;
         public static ConfigEntry<bool> RouteEnabled;
         public static ConfigEntry<float> HopCost;
+        public static ConfigEntry<float> WaterPenalty;
         public static ConfigEntry<bool> RoutePresumed;
         public static ConfigEntry<Color> RouteColor;
         public static ConfigEntry<bool> RouteOnMinimap;
@@ -158,13 +159,20 @@ namespace PortalLines
                 new ConfigDescription(
                     "Shift-click a spot on the large map to plan the fastest way there through the " +
                     "portal network: walk to a portal, hop, walk on. Shift-right-click clears it.",
-                    null, Attr(53)));
+                    null, Attr(54)));
 
             HopCost = cfg.Bind("Route", "HopCost", 60f,
                 new ConfigDescription(
                     "How many metres of walking one portal hop is worth, so the planner does not " +
                     "chain hops that save almost nothing.",
-                    new AcceptableValueRange<float>(0f, 500f), Attr(52)));
+                    new AcceptableValueRange<float>(0f, 500f), Attr(53)));
+
+            WaterPenalty = cfg.Bind("Route", "WaterPenalty", 5f,
+                new ConfigDescription(
+                    "How much worse a metre you would have to swim is than a metre of walking. Routes " +
+                    "walk round fjords, bays and the sea unless going round is this many times longer " +
+                    "than swimming. Shallow fords count as land. 1 ignores water and plans straight lines.",
+                    new AcceptableValueRange<float>(1f, 20f), Attr(52)));
 
             RoutePresumed = cfg.Bind("Route", "UsePresumedLinks", true,
                 new ConfigDescription("Let the planner use links that are presumed but not yet confirmed by the server.",
@@ -285,6 +293,7 @@ namespace PortalLines
             MapToggle.SettingChanged += (s, e) => Raise(StyleChanged);
 
             HopCost.SettingChanged += (s, e) => Raise(RouteChanged);
+            WaterPenalty.SettingChanged += (s, e) => Raise(RouteChanged);
             RoutePresumed.SettingChanged += (s, e) => Raise(RouteChanged);
 
             PinsEnabled.SettingChanged += (s, e) => Raise(PinsChanged);

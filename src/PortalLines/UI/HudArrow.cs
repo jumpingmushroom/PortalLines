@@ -58,7 +58,7 @@ namespace PortalLines.UI
             Route route = RouteState.Current;
             RouteLeg hop = NextHop(route);
             Vector3 target = RouteState.NextWaypoint();
-            float dist = Utils.DistanceXZ(pos, target);
+            float dist = RouteState.DistanceToLegEnd(pos);
             bool enter = hop != null && (route.Legs[0].Kind == LegKind.Hop || dist <= EnterDistance);
 
             string key;
